@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "845469238451",
+    "project_id": "authtodoapp-b21b9",
+    "storage_bucket": "authtodoapp-b21b9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845469238451:android:10e6ac91bf35ea93e8dcc6",
+        "android_client_info": {
+          "package_name": "com.example.to_do_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "845469238451-4b1745506sb50ad8uk3r3vm856rn0m1a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.to_do_app",
+            "certificate_hash": "4b6ef8a662f9fe0f1fb2e88a8656433e37c35be7"
+          }
+        },
+        {
+          "client_id": "845469238451-tp1brggsb3n4b9d8kgpatbhih2h21kap.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwrqmq73PxaYu9sFfHHeu3vBteLF9GYok"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "845469238451-tp1brggsb3n4b9d8kgpatbhih2h21kap.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
