@@ -9,11 +9,11 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();           
-  await ProManager.instance.init();  
+  await Firebase.initializeApp();
+  await ProManager.instance.init();
   //  await Firebase.initializeApp(
-  //   options: DefaultFirebaseOptions.currentPlatform, 
-  // );       
+  //   options: DefaultFirebaseOptions.currentPlatform,
+  // );
   runApp(const ToDoApp());
 }
 
@@ -32,9 +32,14 @@ class ToDoApp extends StatelessWidget {
         brightness: Brightness.light,
         scaffoldBackgroundColor: const Color(0xFFF5F3FF),
       ),
-      darkTheme: ThemeData(useMaterial3: true, colorSchemeSeed: seed, brightness: Brightness.dark),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: seed,
+        brightness: Brightness.dark,
+      ),
       routes: {
-        '/': (_) => TaskListScreen(tasks: const [], onAdd: (_) {}, onUpdate: (_) {}),
+        '/': (_) =>
+            TaskListScreen(tasks: const [], onAdd: (_) {}, onUpdate: (_) {}),
         '/templates': (_) => const TaskTemplatesScreen(),
       },
     );
