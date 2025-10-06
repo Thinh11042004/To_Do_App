@@ -1,20 +1,24 @@
+// lib/screens/task_list_screen.dart
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../widgets/task_item.dart';
 import 'add_task_sheet.dart';
 import 'category_manager_screen.dart';
 
-// tách tab
+// Tabs
 import 'tabs/menu_tab.dart';
 import 'tabs/calendar_tab.dart';
 import 'tabs/me_tab.dart';
 
-// search
+// Search
 import 'search/task_search_delegate.dart';
 
-// 👇 thêm: Pro demo
+// Pro demo
 import '../services/pro_manager.dart';
-import 'Pay/upgrade_pro_demo_screen.dart.dart';
+import 'Pay/upgrade_pro_demo_screen.dart';
+
+// >>> NEW: màn chi tiết
+import 'task_detail_screen.dart';
 
 enum SortOption { dueDate, createdNewestBottom, createdNewestTop, az, za, manual }
 enum _MenuAction { manageCategories, search, sort, printTasks, toggleCompact, upgradePro }
@@ -30,17 +34,19 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  int _tabIndex = 1;                  // 0=Menu, 1=Nhiệm vụ, 2=Lịch, 3=Của tôi
-  TaskCategory? filter;               // null = tất cả
+  int _tabIndex = 1; // 0=Menu, 1=Nhiệm vụ, 2=Lịch, 3=Của tôi
+  TaskCategory? filter; // null = tất cả
   SortOption _sort = SortOption.dueDate;
   bool _compact = false;
 
   List<Task> get _filtered {
     List<Task> list = List.of(widget.tasks);
     if (filter != null) {
-      list = list.where((t) =>
-        (filter == TaskCategory.work && t.category == TaskCategory.work) ||
-        (filter == TaskCategory.personal && t.category == TaskCategory.personal)).toList();
+      list = list
+          .where((t) =>
+              (filter == TaskCategory.work && t.category == TaskCategory.work) ||
+              (filter == TaskCategory.personal && t.category == TaskCategory.personal))
+          .toList();
     }
     switch (_sort) {
       case SortOption.dueDate:
@@ -128,8 +134,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               Icon(Icons.workspace_premium, color: Colors.amber),
             ]),
           ),
-          if (!isPro)
-            const PopupMenuItem(value: _MenuAction.upgradePro, child: Text('Nâng cấp lên Pro')),
+          if (!isPro) const PopupMenuItem(value: _MenuAction.upgradePro, child: Text('Nâng cấp lên Pro')),
         ];
       },
     );
@@ -153,13 +158,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
         if (picked != null) setState(() => _sort = picked);
         break;
       case _MenuAction.printTasks:
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo: In danh sách nhiệm vụ')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Demo: In danh sách nhiệm vụ')),
+        );
         break;
       case _MenuAction.toggleCompact:
         setState(() => _compact = !_compact);
         break;
       case _MenuAction.upgradePro:
-        // 👉 mở màn hình DEMO Pro (không thanh toán thật)
         await Navigator.push(context, MaterialPageRoute(builder: (_) => const UpgradeProDemoScreen()));
         setState(() {}); // refresh menu sau khi có thể đã Pro
         break;
@@ -178,7 +184,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
             children: [
               for (final opt in SortOption.values)
                 RadioListTile<SortOption>(
-                  value: opt, groupValue: temp, onChanged: (v) => setS(() => temp = v!),
+                  value: opt,
+                  groupValue: temp,
+                  onChanged: (v) => setS(() => temp = v!),
                   title: Text({
                     SortOption.dueDate: 'Ngày và giờ đến hạn',
                     SortOption.createdNewestBottom: 'Thời gian tạo (Mới nhất dưới cùng)',
@@ -204,17 +212,23 @@ class _TaskListScreenState extends State<TaskListScreen> {
     if (_tabIndex == 0) {
       return MenuTab(
         onOpenCategories: () => Navigator.push(
-          context, MaterialPageRoute(builder: (_) => CategoryManagerScreen(tasks: widget.tasks))),
-        // 👉 chuyển sang màn DEMO Pro
-        onUpgradePro: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UpgradeProDemoScreen())),
+          context,
+          MaterialPageRoute(builder: (_) => CategoryManagerScreen(tasks: widget.tasks)),
+        ),
+        onUpgradePro: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const UpgradeProDemoScreen()),
+        ),
       );
     }
     if (_tabIndex == 2) return CalendarTab(tasks: widget.tasks);
     if (_tabIndex == 3) {
       return MeTab(
         tasks: widget.tasks,
-        // 👉 chuyển sang màn DEMO Pro
-        onUpgrade: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UpgradeProDemoScreen())),
+        onUpgrade: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const UpgradeProDemoScreen()),
+        ),
       );
     }
 
@@ -250,6 +264,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
       ]),
     );
 
+    Future<void> _openDetail(Task t) async {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const TaskDetailScreen(),
+          settings: RouteSettings(arguments: t),
+        ),
+      );
+      setState(() {}); // refresh lại sau khi sửa trong màn chi tiết
+    }
+
     final listView = (_sort == SortOption.manual)
         ? ReorderableListView.builder(
             padding: const EdgeInsets.only(bottom: 100),
@@ -270,8 +295,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 child: TaskItem(
                   compact: _compact,
                   task: t,
-                  onToggleDone: () { t.done = !t.done; widget.onUpdate(t); setState(() {}); },
-                  onTap: () { t.favorite = !t.favorite; widget.onUpdate(t); setState(() {}); },
+                  onToggleDone: () {
+                    t.done = !t.done;
+                    widget.onUpdate(t);
+                    setState(() {});
+                  },
+                  // >>> CHẠM ĐỂ MỞ CHI TIẾT
+                  onTap: () => _openDetail(t),
                 ),
               );
             },
@@ -284,8 +314,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
               return TaskItem(
                 compact: _compact,
                 task: t,
-                onToggleDone: () { t.done = !t.done; widget.onUpdate(t); setState(() {}); },
-                onTap: () { t.favorite = !t.favorite; widget.onUpdate(t); setState(() {}); },
+                onToggleDone: () {
+                  t.done = !t.done;
+                  widget.onUpdate(t);
+                  setState(() {});
+                },
+                // >>> CHẠM ĐỂ MỞ CHI TIẾT
+                onTap: () => _openDetail(t),
               );
             },
           );
@@ -304,8 +339,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
             children: [
               const Icon(Icons.laptop_chromebook, size: 120),
               const SizedBox(height: 16),
-              Text('Không có nhiệm vụ nào trong danh mục này.\nNhấp vào + để tạo nhiệm vụ của bạn.',
-                  style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+              Text(
+                'Không có nhiệm vụ nào trong danh mục này.\nNhấp vào + để tạo nhiệm vụ của bạn.',
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
