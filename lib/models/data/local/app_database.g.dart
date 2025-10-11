@@ -15,145 +15,96 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
   @override
   late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
-    'notes',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
+      'notes', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _dueAtMeta = const VerificationMeta('dueAt');
   @override
   late final GeneratedColumn<int> dueAt = GeneratedColumn<int>(
-    'due_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _remindAtMeta = const VerificationMeta(
-    'remindAt',
-  );
+      'due_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _remindAtMeta =
+      const VerificationMeta('remindAt');
   @override
   late final GeneratedColumn<int> remindAt = GeneratedColumn<int>(
-    'remind_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
+      'remind_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
-    'status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('todo'),
-  );
-  static const VerificationMeta _priorityMeta = const VerificationMeta(
-    'priority',
-  );
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('todo'));
+  static const VerificationMeta _priorityMeta =
+      const VerificationMeta('priority');
   @override
   late final GeneratedColumn<String> priority = GeneratedColumn<String>(
-    'priority',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('normal'),
-  );
-  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
-    'categoryId',
-  );
+      'priority', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('normal'));
+  static const VerificationMeta _categoryIdMeta =
+      const VerificationMeta('categoryId');
   @override
   late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
-    'category_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _tagsJsonMeta = const VerificationMeta(
-    'tagsJson',
-  );
+      'category_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _tagsJsonMeta =
+      const VerificationMeta('tagsJson');
   @override
   late final GeneratedColumn<String> tagsJson = GeneratedColumn<String>(
-    'tags_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('[]'),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
+      'tags_json', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
   @override
   late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
+      'created_at', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
   @override
   late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
   @override
   List<GeneratedColumn> get $columns => [
-    id,
-    title,
-    notes,
-    dueAt,
-    remindAt,
-    status,
-    priority,
-    categoryId,
-    tagsJson,
-    createdAt,
-    updatedAt,
-  ];
+        id,
+        title,
+        notes,
+        dueAt,
+        remindAt,
+        status,
+        priority,
+        categoryId,
+        tagsJson,
+        createdAt,
+        updatedAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'tasks';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<Task> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<Task> instance,
+      {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -161,67 +112,49 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     }
     if (data.containsKey('title')) {
       context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
     } else if (isInserting) {
       context.missing(_titleMeta);
     }
     if (data.containsKey('notes')) {
       context.handle(
-        _notesMeta,
-        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
-      );
+          _notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
     }
     if (data.containsKey('due_at')) {
       context.handle(
-        _dueAtMeta,
-        dueAt.isAcceptableOrUnknown(data['due_at']!, _dueAtMeta),
-      );
+          _dueAtMeta, dueAt.isAcceptableOrUnknown(data['due_at']!, _dueAtMeta));
     }
     if (data.containsKey('remind_at')) {
-      context.handle(
-        _remindAtMeta,
-        remindAt.isAcceptableOrUnknown(data['remind_at']!, _remindAtMeta),
-      );
+      context.handle(_remindAtMeta,
+          remindAt.isAcceptableOrUnknown(data['remind_at']!, _remindAtMeta));
     }
     if (data.containsKey('status')) {
-      context.handle(
-        _statusMeta,
-        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
-      );
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
     }
     if (data.containsKey('priority')) {
-      context.handle(
-        _priorityMeta,
-        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
-      );
+      context.handle(_priorityMeta,
+          priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta));
     }
     if (data.containsKey('category_id')) {
       context.handle(
-        _categoryIdMeta,
-        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
-      );
+          _categoryIdMeta,
+          categoryId.isAcceptableOrUnknown(
+              data['category_id']!, _categoryIdMeta));
     }
     if (data.containsKey('tags_json')) {
-      context.handle(
-        _tagsJsonMeta,
-        tagsJson.isAcceptableOrUnknown(data['tags_json']!, _tagsJsonMeta),
-      );
+      context.handle(_tagsJsonMeta,
+          tagsJson.isAcceptableOrUnknown(data['tags_json']!, _tagsJsonMeta));
     }
     if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
@@ -234,50 +167,28 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   Task map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Task(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      title: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title'],
-      )!,
-      notes: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}notes'],
-      ),
-      dueAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}due_at'],
-      ),
-      remindAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}remind_at'],
-      ),
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
-      priority: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}priority'],
-      )!,
-      categoryId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}category_id'],
-      ),
-      tagsJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}tags_json'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}updated_at'],
-      )!,
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      notes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}notes']),
+      dueAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}due_at']),
+      remindAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}remind_at']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      priority: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}priority'])!,
+      categoryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}category_id']),
+      tagsJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tags_json'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}updated_at'])!,
     );
   }
 
@@ -299,19 +210,18 @@ class Task extends DataClass implements Insertable<Task> {
   final String tagsJson;
   final int createdAt;
   final int updatedAt;
-  const Task({
-    required this.id,
-    required this.title,
-    this.notes,
-    this.dueAt,
-    this.remindAt,
-    required this.status,
-    required this.priority,
-    this.categoryId,
-    required this.tagsJson,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+  const Task(
+      {required this.id,
+      required this.title,
+      this.notes,
+      this.dueAt,
+      this.remindAt,
+      required this.status,
+      required this.priority,
+      this.categoryId,
+      required this.tagsJson,
+      required this.createdAt,
+      required this.updatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -341,12 +251,10 @@ class Task extends DataClass implements Insertable<Task> {
     return TasksCompanion(
       id: Value(id),
       title: Value(title),
-      notes: notes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(notes),
-      dueAt: dueAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(dueAt),
+      notes:
+          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      dueAt:
+          dueAt == null && nullToAbsent ? const Value.absent() : Value(dueAt),
       remindAt: remindAt == null && nullToAbsent
           ? const Value.absent()
           : Value(remindAt),
@@ -361,10 +269,8 @@ class Task extends DataClass implements Insertable<Task> {
     );
   }
 
-  factory Task.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory Task.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Task(
       id: serializer.fromJson<int>(json['id']),
@@ -398,31 +304,31 @@ class Task extends DataClass implements Insertable<Task> {
     };
   }
 
-  Task copyWith({
-    int? id,
-    String? title,
-    Value<String?> notes = const Value.absent(),
-    Value<int?> dueAt = const Value.absent(),
-    Value<int?> remindAt = const Value.absent(),
-    String? status,
-    String? priority,
-    Value<String?> categoryId = const Value.absent(),
-    String? tagsJson,
-    int? createdAt,
-    int? updatedAt,
-  }) => Task(
-    id: id ?? this.id,
-    title: title ?? this.title,
-    notes: notes.present ? notes.value : this.notes,
-    dueAt: dueAt.present ? dueAt.value : this.dueAt,
-    remindAt: remindAt.present ? remindAt.value : this.remindAt,
-    status: status ?? this.status,
-    priority: priority ?? this.priority,
-    categoryId: categoryId.present ? categoryId.value : this.categoryId,
-    tagsJson: tagsJson ?? this.tagsJson,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
+  Task copyWith(
+          {int? id,
+          String? title,
+          Value<String?> notes = const Value.absent(),
+          Value<int?> dueAt = const Value.absent(),
+          Value<int?> remindAt = const Value.absent(),
+          String? status,
+          String? priority,
+          Value<String?> categoryId = const Value.absent(),
+          String? tagsJson,
+          int? createdAt,
+          int? updatedAt}) =>
+      Task(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        notes: notes.present ? notes.value : this.notes,
+        dueAt: dueAt.present ? dueAt.value : this.dueAt,
+        remindAt: remindAt.present ? remindAt.value : this.remindAt,
+        status: status ?? this.status,
+        priority: priority ?? this.priority,
+        categoryId: categoryId.present ? categoryId.value : this.categoryId,
+        tagsJson: tagsJson ?? this.tagsJson,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
   Task copyWithCompanion(TasksCompanion data) {
     return Task(
       id: data.id.present ? data.id.value : this.id,
@@ -432,9 +338,8 @@ class Task extends DataClass implements Insertable<Task> {
       remindAt: data.remindAt.present ? data.remindAt.value : this.remindAt,
       status: data.status.present ? data.status.value : this.status,
       priority: data.priority.present ? data.priority.value : this.priority,
-      categoryId: data.categoryId.present
-          ? data.categoryId.value
-          : this.categoryId,
+      categoryId:
+          data.categoryId.present ? data.categoryId.value : this.categoryId,
       tagsJson: data.tagsJson.present ? data.tagsJson.value : this.tagsJson,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -460,19 +365,8 @@ class Task extends DataClass implements Insertable<Task> {
   }
 
   @override
-  int get hashCode => Object.hash(
-    id,
-    title,
-    notes,
-    dueAt,
-    remindAt,
-    status,
-    priority,
-    categoryId,
-    tagsJson,
-    createdAt,
-    updatedAt,
-  );
+  int get hashCode => Object.hash(id, title, notes, dueAt, remindAt, status,
+      priority, categoryId, tagsJson, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -527,9 +421,9 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.tagsJson = const Value.absent(),
     required int createdAt,
     required int updatedAt,
-  }) : title = Value(title),
-       createdAt = Value(createdAt),
-       updatedAt = Value(updatedAt);
+  })  : title = Value(title),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
   static Insertable<Task> custom({
     Expression<int>? id,
     Expression<String>? title,
@@ -558,19 +452,18 @@ class TasksCompanion extends UpdateCompanion<Task> {
     });
   }
 
-  TasksCompanion copyWith({
-    Value<int>? id,
-    Value<String>? title,
-    Value<String?>? notes,
-    Value<int?>? dueAt,
-    Value<int?>? remindAt,
-    Value<String>? status,
-    Value<String>? priority,
-    Value<String?>? categoryId,
-    Value<String>? tagsJson,
-    Value<int>? createdAt,
-    Value<int>? updatedAt,
-  }) {
+  TasksCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? title,
+      Value<String?>? notes,
+      Value<int?>? dueAt,
+      Value<int?>? remindAt,
+      Value<String>? status,
+      Value<String>? priority,
+      Value<String?>? categoryId,
+      Value<String>? tagsJson,
+      Value<int>? createdAt,
+      Value<int>? updatedAt}) {
     return TasksCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -656,34 +549,32 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [tasks];
 }
 
-typedef $$TasksTableCreateCompanionBuilder =
-    TasksCompanion Function({
-      Value<int> id,
-      required String title,
-      Value<String?> notes,
-      Value<int?> dueAt,
-      Value<int?> remindAt,
-      Value<String> status,
-      Value<String> priority,
-      Value<String?> categoryId,
-      Value<String> tagsJson,
-      required int createdAt,
-      required int updatedAt,
-    });
-typedef $$TasksTableUpdateCompanionBuilder =
-    TasksCompanion Function({
-      Value<int> id,
-      Value<String> title,
-      Value<String?> notes,
-      Value<int?> dueAt,
-      Value<int?> remindAt,
-      Value<String> status,
-      Value<String> priority,
-      Value<String?> categoryId,
-      Value<String> tagsJson,
-      Value<int> createdAt,
-      Value<int> updatedAt,
-    });
+typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
+  Value<int> id,
+  required String title,
+  Value<String?> notes,
+  Value<int?> dueAt,
+  Value<int?> remindAt,
+  Value<String> status,
+  Value<String> priority,
+  Value<String?> categoryId,
+  Value<String> tagsJson,
+  required int createdAt,
+  required int updatedAt,
+});
+typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
+  Value<int> id,
+  Value<String> title,
+  Value<String?> notes,
+  Value<int?> dueAt,
+  Value<int?> remindAt,
+  Value<String> status,
+  Value<String> priority,
+  Value<String?> categoryId,
+  Value<String> tagsJson,
+  Value<int> createdAt,
+  Value<int> updatedAt,
+});
 
 class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
   $$TasksTableFilterComposer({
@@ -694,59 +585,37 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.id, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.title, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.notes, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get dueAt => $composableBuilder(
-    column: $table.dueAt,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.dueAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get remindAt => $composableBuilder(
-    column: $table.remindAt,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.remindAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get status => $composableBuilder(
-    column: $table.status,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.status, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get priority => $composableBuilder(
-    column: $table.priority,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.priority, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.categoryId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get tagsJson => $composableBuilder(
-    column: $table.tagsJson,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.tagsJson, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$TasksTableOrderingComposer
@@ -759,59 +628,37 @@ class $$TasksTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.id, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.title, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.notes, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get dueAt => $composableBuilder(
-    column: $table.dueAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.dueAt, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get remindAt => $composableBuilder(
-    column: $table.remindAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.remindAt, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get status => $composableBuilder(
-    column: $table.status,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.status, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get priority => $composableBuilder(
-    column: $table.priority,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.priority, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.categoryId, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get tagsJson => $composableBuilder(
-    column: $table.tagsJson,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.tagsJson, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$TasksTableAnnotationComposer
@@ -845,9 +692,7 @@ class $$TasksTableAnnotationComposer
       $composableBuilder(column: $table.priority, builder: (column) => column);
 
   GeneratedColumn<String> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => column,
-  );
+      column: $table.categoryId, builder: (column) => column);
 
   GeneratedColumn<String> get tagsJson =>
       $composableBuilder(column: $table.tagsJson, builder: (column) => column);
@@ -859,24 +704,20 @@ class $$TasksTableAnnotationComposer
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
 
-class $$TasksTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $TasksTable,
-          Task,
-          $$TasksTableFilterComposer,
-          $$TasksTableOrderingComposer,
-          $$TasksTableAnnotationComposer,
-          $$TasksTableCreateCompanionBuilder,
-          $$TasksTableUpdateCompanionBuilder,
-          (Task, BaseReferences<_$AppDatabase, $TasksTable, Task>),
-          Task,
-          PrefetchHooks Function()
-        > {
+class $$TasksTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $TasksTable,
+    Task,
+    $$TasksTableFilterComposer,
+    $$TasksTableOrderingComposer,
+    $$TasksTableAnnotationComposer,
+    $$TasksTableCreateCompanionBuilder,
+    $$TasksTableUpdateCompanionBuilder,
+    (Task, BaseReferences<_$AppDatabase, $TasksTable, Task>),
+    Task,
+    PrefetchHooks Function()> {
   $$TasksTableTableManager(_$AppDatabase db, $TasksTable table)
-    : super(
-        TableManagerState(
+      : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
@@ -885,80 +726,77 @@ class $$TasksTableTableManager
               $$TasksTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$TasksTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String?> notes = const Value.absent(),
-                Value<int?> dueAt = const Value.absent(),
-                Value<int?> remindAt = const Value.absent(),
-                Value<String> status = const Value.absent(),
-                Value<String> priority = const Value.absent(),
-                Value<String?> categoryId = const Value.absent(),
-                Value<String> tagsJson = const Value.absent(),
-                Value<int> createdAt = const Value.absent(),
-                Value<int> updatedAt = const Value.absent(),
-              }) => TasksCompanion(
-                id: id,
-                title: title,
-                notes: notes,
-                dueAt: dueAt,
-                remindAt: remindAt,
-                status: status,
-                priority: priority,
-                categoryId: categoryId,
-                tagsJson: tagsJson,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String title,
-                Value<String?> notes = const Value.absent(),
-                Value<int?> dueAt = const Value.absent(),
-                Value<int?> remindAt = const Value.absent(),
-                Value<String> status = const Value.absent(),
-                Value<String> priority = const Value.absent(),
-                Value<String?> categoryId = const Value.absent(),
-                Value<String> tagsJson = const Value.absent(),
-                required int createdAt,
-                required int updatedAt,
-              }) => TasksCompanion.insert(
-                id: id,
-                title: title,
-                notes: notes,
-                dueAt: dueAt,
-                remindAt: remindAt,
-                status: status,
-                priority: priority,
-                categoryId: categoryId,
-                tagsJson: tagsJson,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-              ),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String?> notes = const Value.absent(),
+            Value<int?> dueAt = const Value.absent(),
+            Value<int?> remindAt = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String> priority = const Value.absent(),
+            Value<String?> categoryId = const Value.absent(),
+            Value<String> tagsJson = const Value.absent(),
+            Value<int> createdAt = const Value.absent(),
+            Value<int> updatedAt = const Value.absent(),
+          }) =>
+              TasksCompanion(
+            id: id,
+            title: title,
+            notes: notes,
+            dueAt: dueAt,
+            remindAt: remindAt,
+            status: status,
+            priority: priority,
+            categoryId: categoryId,
+            tagsJson: tagsJson,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String title,
+            Value<String?> notes = const Value.absent(),
+            Value<int?> dueAt = const Value.absent(),
+            Value<int?> remindAt = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<String> priority = const Value.absent(),
+            Value<String?> categoryId = const Value.absent(),
+            Value<String> tagsJson = const Value.absent(),
+            required int createdAt,
+            required int updatedAt,
+          }) =>
+              TasksCompanion.insert(
+            id: id,
+            title: title,
+            notes: notes,
+            dueAt: dueAt,
+            remindAt: remindAt,
+            status: status,
+            priority: priority,
+            categoryId: categoryId,
+            tagsJson: tagsJson,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: null,
-        ),
-      );
+        ));
 }
 
-typedef $$TasksTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $TasksTable,
-      Task,
-      $$TasksTableFilterComposer,
-      $$TasksTableOrderingComposer,
-      $$TasksTableAnnotationComposer,
-      $$TasksTableCreateCompanionBuilder,
-      $$TasksTableUpdateCompanionBuilder,
-      (Task, BaseReferences<_$AppDatabase, $TasksTable, Task>),
-      Task,
-      PrefetchHooks Function()
-    >;
+typedef $$TasksTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $TasksTable,
+    Task,
+    $$TasksTableFilterComposer,
+    $$TasksTableOrderingComposer,
+    $$TasksTableAnnotationComposer,
+    $$TasksTableCreateCompanionBuilder,
+    $$TasksTableUpdateCompanionBuilder,
+    (Task, BaseReferences<_$AppDatabase, $TasksTable, Task>),
+    Task,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;

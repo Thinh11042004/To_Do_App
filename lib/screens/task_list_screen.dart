@@ -3,6 +3,7 @@ import '../models/task.dart';
 import '../widgets/task_item.dart';
 import 'add_task_sheet.dart';
 import 'category_manager_screen.dart';
+import 'task_detail_screen.dart';
 
 // DB & Repo
 import '../services/db_service.dart';
@@ -19,7 +20,7 @@ import 'search/task_search_delegate.dart';
 
 // 👇 thêm: Pro demo
 import '../services/pro_manager.dart';
-import 'Pay/upgrade_pro_demo_screen.dart.dart';
+import 'Pay/upgrade_pro_demo_screen.dart';
 
 enum SortOption {
   dueDate,
@@ -472,6 +473,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 child: TaskItem(
                   compact: _compact,
                   task: t,
+                  onEdit: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const TaskDetailScreen(),
+                        settings: RouteSettings(arguments: t),
+                      ),
+                    );
+                  },
                   onToggleDone: () async {
                     t.done = !t.done;
                     await _updateTask(t);
@@ -494,6 +503,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
               return TaskItem(
                 compact: _compact,
                 task: t,
+                onEdit: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const TaskDetailScreen(),
+                      settings: RouteSettings(arguments: t),
+                    ),
+                  );
+                },
                 onToggleDone: () async {
                   t.done = !t.done;
                   await _updateTask(t);
@@ -517,20 +534,20 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _emptyState(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.laptop_chromebook, size: 120),
-          const SizedBox(height: 16),
-          Text(
-            'Không có nhiệm vụ nào trong danh mục này.\nNhấp vào + để tạo nhiệm vụ của bạn.',
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.laptop_chromebook, size: 120),
+              const SizedBox(height: 16),
+              Text(
+                'Không có nhiệm vụ nào trong danh mục này.\nNhấp vào + để tạo nhiệm vụ của bạn.',
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }

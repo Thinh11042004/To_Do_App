@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/task.dart';
 import '../../services/pro_manager.dart';
-import '../Pay/upgrade_pro_demo_screen.dart.dart';
+import '../Pay/upgrade_pro_demo_screen.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
 

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/pro_manager.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class UpgradeProDemoScreen extends StatefulWidget {
   const UpgradeProDemoScreen({super.key});
@@ -13,11 +12,6 @@ class UpgradeProDemoScreen extends StatefulWidget {
 class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
   bool _processing = false;
   final _codeCtl = TextEditingController();
-
-  // Payload cho QR (offline, không cần mạng)
-  // Có thêm timestamp để QR thay đổi mỗi lần mở (tránh cache).
-  late final String _qrData =
-      'DEMO-TODO-PRO|${DateTime.now().millisecondsSinceEpoch}';
 
   @override
   void dispose() {
@@ -37,10 +31,7 @@ class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
         title: const Text('Nâng cấp thành công'),
         content: const Text('Demo: tài khoản đã được kích hoạt Pro.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
         ],
       ),
     ).then((_) => Navigator.pop(context, true));
@@ -51,21 +42,16 @@ class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
     if (code == 'PROFREE' || code == 'PRODEMO') {
       await ProManager.instance.upgrade();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kích hoạt Pro thành công')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kích hoạt Pro thành công')));
       Navigator.pop(context, true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mã không hợp lệ (PROFREE / PRODEMO)')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mã không hợp lệ (PROFREE / PRODEMO)')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Nâng cấp Pro (Demo)')),
       body: ListView(
@@ -76,21 +62,15 @@ class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // ✅ QR tạo nội bộ (offline) – không còn SocketException khi không có mạng
-                  QrImageView(
-                    data: _qrData,
-                    version: QrVersions.auto,
-                    size: 240,
-                    gapless: true,
-                    backgroundColor: Colors.white,
+                  // QR minh hoạ thôi (không dùng để kiểm tra thanh toán)
+                  Image.network(
+                    'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=DEMO-TODO-PRO',
+                    width: 240, height: 240, fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    'Quét QR (minh hoạ) hoặc dùng mã kích hoạt để trải nghiệm Pro.\n'
-                    'Hoạt động cả khi không có Internet.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
+                  Text('Quét QR (minh hoạ) hoặc dùng mã kích hoạt để trải nghiệm Pro.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center),
                 ],
               ),
             ),
@@ -105,21 +85,15 @@ class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
           FilledButton.icon(
             onPressed: _processing ? null : _simulatePaid,
             icon: _processing
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.verified),
             label: Text(_processing ? 'Đang xử lý...' : 'Giả lập: Tôi đã thanh toán'),
           ),
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 12),
-          Text(
-            'Hoặc kích hoạt bằng mã: PROFREE / PRODEMO',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Hoặc kích hoạt bằng mã: PROFREE / PRODEMO',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Row(
             children: [

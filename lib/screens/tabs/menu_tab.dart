@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/pro_manager.dart';
-import '../Pay/upgrade_pro_demo_screen.dart.dart';
+import '../Pay/upgrade_pro_demo_screen.dart';
 
 class MenuTab extends StatelessWidget {
   final VoidCallback onOpenCategories;
