@@ -1,6 +1,6 @@
 // Singleton DB & Repo
-import '../features/tasks/data/local/app_database.dart';
-import '../features/tasks/data/repositories/task_repository_drift.dart';
+import '../models/data/local/app_database.dart';
+import '../models/data/repositories/task_repository_drift.dart';
 
 class DbService {
   DbService._();

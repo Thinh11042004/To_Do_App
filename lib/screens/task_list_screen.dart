@@ -6,8 +6,8 @@ import 'category_manager_screen.dart';
 
 // DB & Repo
 import '../services/db_service.dart';
-import '../features/tasks/domain/entities/task_entity.dart';
-import '../features/tasks/data/repositories/task_repository_drift.dart';
+import '../models/domain/entities/task_entity.dart';
+import '../models/data/repositories/task_repository_drift.dart';
 
 // tách tab
 import 'tabs/menu_tab.dart';

@@ -1,8 +1,8 @@
 // AUTO-ADDED: Quick demo screen for SQLite/Drift tasks
 import 'package:flutter/material.dart';
-import '../features/tasks/data/local/app_database.dart';
-import '../features/tasks/data/repositories/task_repository_drift.dart';
-import '../features/tasks/domain/entities/task_entity.dart';
+import '../models/data/local/app_database.dart';
+import '../models/data/repositories/task_repository_drift.dart';
+import '../models/domain/entities/task_entity.dart';
 
 class SqliteDemoScreen extends StatefulWidget {
   const SqliteDemoScreen({super.key});
@@ -36,18 +36,20 @@ class _SqliteDemoScreenState extends State<SqliteDemoScreen> {
         ? 'Việc mới lúc ${DateTime.now().hour}:${DateTime.now().minute}'
         : _titleCtrl.text.trim();
     final now = DateTime.now();
-    await _repo.add(TaskEntity(
-      title: text,
-      notes: null,
-      dueAt: now.add(const Duration(hours: 1)),
-      remindAt: null,
-      status: 'todo',
-      priority: 'normal',
-      categoryId: null,
-      tags: const [],
-      createdAt: now,
-      updatedAt: now,
-    ));
+    await _repo.add(
+      TaskEntity(
+        title: text,
+        notes: null,
+        dueAt: now.add(const Duration(hours: 1)),
+        remindAt: null,
+        status: 'todo',
+        priority: 'normal',
+        categoryId: null,
+        tags: const [],
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     _titleCtrl.clear();
   }
 
@@ -71,10 +73,7 @@ class _SqliteDemoScreenState extends State<SqliteDemoScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addQuick,
-                  child: const Text('Thêm'),
-                )
+                ElevatedButton(onPressed: _addQuick, child: const Text('Thêm')),
               ],
             ),
           ),
@@ -100,14 +99,17 @@ class _SqliteDemoScreenState extends State<SqliteDemoScreen> {
                     final t = items[i];
                     return ListTile(
                       title: Text(t.title),
-                      subtitle: Text('${t.priority} • ${t.status}'
-                          '${t.dueAt != null ? ' • due ${t.dueAt}' : ''}'),
+                      subtitle: Text(
+                        '${t.priority} • ${t.status}'
+                        '${t.dueAt != null ? ' • due ${t.dueAt}' : ''}',
+                      ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () => _repo.delete(t.id!),
                       ),
-                      onTap: () =>
-                          _repo.update(t.copyWith(status: 'done', updatedAt: DateTime.now())),
+                      onTap: () => _repo.update(
+                        t.copyWith(status: 'done', updatedAt: DateTime.now()),
+                      ),
                     );
                   },
                 );
