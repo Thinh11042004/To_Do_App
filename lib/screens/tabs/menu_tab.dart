@@ -62,6 +62,8 @@ class MenuTab extends StatelessWidget {
         ),
 
         item(Icons.star, 'Star Task'),
+        item(Icons.cloud_sync, 'Đồng bộ đám mây Firebase',
+            trailing: const Icon(Icons.verified, color: Colors.green)),
         item(Icons.widgets, 'Thể loại',
             trailing: const Icon(Icons.keyboard_arrow_down), onTap: onOpenCategories),
         const Divider(),

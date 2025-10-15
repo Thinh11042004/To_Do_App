@@ -5,6 +5,8 @@ import '../../services/pro_manager.dart';
 import '../Pay/upgrade_pro_demo_screen.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
+import '../../services/ai_insights_service.dart';
+import '../../widgets/ai_insight_card.dart';
 
 class MeTab extends StatefulWidget {
   final List<Task> tasks;
@@ -34,6 +36,7 @@ class _MeTabState extends State<MeTab> {
 
   @override
   Widget build(BuildContext context) {
+    final insights = AiInsightsService.generate(widget.tasks);
     final filtered = _rangeTasks;
     final done = filtered.where((t) => t.done).length;
     final notDone = filtered.length - done;
@@ -142,6 +145,13 @@ class _MeTabState extends State<MeTab> {
             },
           ),
         ),
+        
+         const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: AiInsightCard(summary: insights),
+        ),
+        const SizedBox(height: 12),
 
         // ===== STATS =====
         pillTitle('Tổng quan về Nhiệm vụ'),

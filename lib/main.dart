@@ -2,18 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
-import 'models/task.dart';
+import 'services/notification_service.dart';
+import 'services/pro_manager.dart';
 import 'screens/task_list_screen.dart';
 import 'screens/task_templates_screen.dart';
-import 'screens/splash/app_splash.dart';
-import 'services/pro_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, 
-  );
+
+  // Firebase init (đơn giản và an toàn cho mọi nền tảng)
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else {
+      Firebase.app(); // lấy instance hiện có
+    }
+  } catch (e) {
+    // Nếu rơi vào case app đã khởi tạo ở hot-reload/hot-restart
+    // vẫn đảm bảo có thể tiếp tục chạy
+    debugPrint('Firebase init warning: $e');
+    try {
+      Firebase.app();
+    } catch (_) {}
+  }
+
+  // App services
   await ProManager.instance.init();
+  await NotificationService.instance.init();
+
   runApp(const ToDoApp());
 }
 
@@ -22,42 +40,44 @@ class ToDoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Colors.deepPurple;
+    const seed = Color(0xFF6750A4);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'To-Do Demo',
+      title: 'ToDo Demo',
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: seed,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF5F3FF),
+        colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light),
+        scaffoldBackgroundColor: const Color(0xFFF4F0FF),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.black87,
+          centerTitle: true,
+          elevation: 0,
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white.withOpacity(.92),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        ),
+        chipTheme: ChipThemeData(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: seed.withOpacity(.12),
+          selectedColor: seed,
+        ),
       ),
-      darkTheme: ThemeData(useMaterial3: true, colorSchemeSeed: seed, brightness: Brightness.dark),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark),
+      ),
       routes: {
-        '/': (_) => const AppSplash(),            // ✅ vào Splash trước
-        '/home': (_) => const _HomeHost(),        // ✅ màn chính
+        '/': (_) => TaskListScreen(
+              tasks: const [],
+              onAdd: (_) {},
+              onUpdate: (_) {},
+            ),
         '/templates': (_) => const TaskTemplatesScreen(),
       },
     );
-  }
-}
-
-/// Host giữ state danh sách task để TaskListScreen hoạt động đúng
-class _HomeHost extends StatefulWidget {
-  const _HomeHost();
-
-  @override
-  State<_HomeHost> createState() => _HomeHostState();
-}
-
-class _HomeHostState extends State<_HomeHost> {
-  final List<Task> _tasks = [];
-
-  void _add(Task t) => setState(() => _tasks.add(t));
-  void _update(Task t) => setState(() { /* stateful list đã tham chiếu */ });
-
-  @override
-  Widget build(BuildContext context) {
-    return TaskListScreen(tasks: _tasks, onAdd: _add, onUpdate: _update);
   }
 }
