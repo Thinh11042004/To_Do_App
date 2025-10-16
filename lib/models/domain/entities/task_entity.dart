@@ -9,6 +9,7 @@ class TaskEntity {
   final String priority; // low|normal|high|urgent
   final String? categoryId;
   final List<String> tags;
+  final bool favorite;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -22,6 +23,7 @@ class TaskEntity {
     this.priority = 'normal',
     this.categoryId,
     this.tags = const [],
+    this.favorite = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36,6 +38,7 @@ class TaskEntity {
     String? priority,
     String? categoryId,
     List<String>? tags,
+    bool? favorite,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -49,6 +52,7 @@ class TaskEntity {
       priority: priority ?? this.priority,
       categoryId: categoryId ?? this.categoryId,
       tags: tags ?? this.tags,
+      favorite: favorite ?? this.favorite,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

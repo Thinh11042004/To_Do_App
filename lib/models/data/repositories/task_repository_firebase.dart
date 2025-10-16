@@ -23,6 +23,7 @@ class TaskRepositoryFirebase implements TaskRepository {
       'priority': task.priority,
       'categoryId': task.categoryId,
       'tags': task.tags,
+      'favorite': task.favorite,
       'createdAt': Timestamp.fromDate(task.createdAt.toUtc()),
       'updatedAt': Timestamp.fromDate(task.updatedAt.toUtc()),
     };
@@ -45,6 +46,7 @@ class TaskRepositoryFirebase implements TaskRepository {
       priority: data['priority'] as String? ?? 'normal',
       categoryId: data['categoryId'] as String?,
       tags: (data['tags'] as List<dynamic>? ?? const []).cast<String>(),
+      favorite: data['favorite'] as bool? ?? false,
       createdAt: (created ?? Timestamp.now()).toDate().toLocal(),
       updatedAt: (updated ?? Timestamp.now()).toDate().toLocal(),
     );

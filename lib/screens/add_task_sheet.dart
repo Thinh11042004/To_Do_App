@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/task.dart';
+import '../services/category_store.dart';
 
 class AddTaskSheet extends StatefulWidget {
   final Task? initial; // dùng cho Template
@@ -17,11 +20,13 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   final _focus = FocusNode(); // Focus cho ô nhập chính
 
   TaskCategory _category = TaskCategory.work;
+  String? _customCategoryId;
   DateTime? _date;
   TimeOfDay? _time;
   Duration? _remind;
   RepeatRule _repeat = RepeatRule.none;
   final List<SubTask> _subs = [];
+  final CategoryStore _categoryStore = CategoryStore.instance;
 
   @override
   void initState() {
@@ -29,6 +34,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     final i = widget.initial;
     _title = TextEditingController(text: i?.title ?? '');
     _category = i?.category ?? TaskCategory.work;
+    _customCategoryId = i?.customCategoryId;
     _date = i?.dueDate;
     _time = i?.timeOfDay;
     _remind = i?.reminderBefore;
@@ -41,6 +47,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       FocusScope.of(context).requestFocus(_focus);
       SystemChannels.textInput.invokeMethod('TextInput.show');
     });
+    unawaited(_categoryStore.ensureLoaded());
   }
 
   @override
@@ -70,7 +77,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     if (picked != null) setState(() => _time = picked);
   }
 
-  Future<void> _pickRepeat() async {
+Future<void> _pickRepeat() async {
     RepeatRule temp = _repeat;
     await showModalBottomSheet(
       context: context,
@@ -134,6 +141,87 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     );
   }
 
+  Future<void> _pickCategory() async {
+    await _categoryStore.ensureLoaded();
+    final configs = _categoryStore.current;
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Text('Chọn danh mục', style: Theme.of(context).textTheme.titleMedium),
+            const Divider(),
+            for (final cfg in configs)
+              ListTile(
+                leading: CircleAvatar(backgroundColor: Color(cfg.color), radius: 8),
+                title: Text(cfg.label),
+                trailing: cfg.id == _customCategoryId ||
+                        (_categoryStore.resolveSystem(cfg.id) == _category && _customCategoryId == null)
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () => Navigator.pop(context, cfg.id),
+              ),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Tạo danh mục mới'),
+              onTap: () async {
+                final name = await _promptNewCategory();
+                if (name != null && name.isNotEmpty) {
+                  await _categoryStore.createCustom(name: name);
+                  Navigator.pop(context, _categoryStore.current.last.id);
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+    if (result == null) return;
+    final system = _categoryStore.resolveSystem(result);
+    setState(() {
+      if (system != null) {
+        _category = system;
+        _customCategoryId = null;
+      } else {
+        _category = TaskCategory.none;
+        _customCategoryId = result;
+      }
+    });
+  }
+
+  Future<String?> _promptNewCategory() async {
+    final ctl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Danh mục mới'),
+        content: TextField(
+          controller: ctl,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Tên danh mục'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('HUỶ')),
+          FilledButton(onPressed: () => Navigator.pop(context, ctl.text.trim()), child: const Text('TẠO')),
+        ],
+      ),
+    );
+  }
+
+  String _currentCategoryLabel() {
+    final temp = Task(
+      id: 'preview',
+      title: _title.text,
+      category: _category,
+      customCategoryId: _customCategoryId,
+    );
+    return resolveCategoryLabel(temp, _categoryStore.current);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -165,31 +253,14 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              PopupMenuButton<TaskCategory>(
-                initialValue: _category,
-                onSelected: (v) => setState(() => _category = v),
-                itemBuilder: (ctx) => TaskCategory.values.map((c) {
-                  return PopupMenuItem(
-                    value: c,
-                    child: Text(
-                      categoryLabel(c),
-                      style: c == _category
-                          ? TextStyle(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            )
-                          : null,
-                    ),
-                  );
-                }).toList(),
-                child: Chip(
-                  avatar: const Icon(Icons.label_outline, size: 18),
-                  label: Text(
-                    categoryLabel(_category),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+              ActionChip(
+                avatar: const Icon(Icons.label_outline, size: 18),
+                label: Text(
+                  _currentCategoryLabel(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                onPressed: _pickCategory,
               ),
 
               ActionChip(
@@ -267,6 +338,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                     setState(() {
                       _title.text = value.title;
                       _category = value.category;
+                      _customCategoryId = value.customCategoryId;
                       _date = value.dueDate;
                       _time = value.timeOfDay;
                       _repeat = value.repeat;
@@ -330,6 +402,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                 id: UniqueKey().toString(),
                 title: _title.text.trim(),
                 category: _category,
+                customCategoryId: _customCategoryId,
                 dueDate: _date,
                 timeOfDay: _time,
                 reminderBefore: _remind,

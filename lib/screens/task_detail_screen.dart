@@ -1,8 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/task.dart';
+import '../services/category_store.dart';
 
 class TaskDetailScreen extends StatefulWidget {
-  const TaskDetailScreen({super.key});
+  const TaskDetailScreen({super.key, required this.task});
+
+  static const routeName = '/task-detail';
+
+  final Task task;
+
+  static PageRoute<Task> route(Task task) {
+    return PageRouteBuilder<Task>(
+      settings: const RouteSettings(name: routeName),
+      transitionDuration: const Duration(milliseconds: 420),
+      reverseTransitionDuration: const Duration(milliseconds: 320),
+      pageBuilder: (_, __, ___) => TaskDetailScreen(task: task),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final offset = Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero)
+            .animate(curved);
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(position: offset, child: child),
+        );
+      },
+    );
+  }
 
   @override
   State<TaskDetailScreen> createState() => _TaskDetailScreenState();
@@ -11,13 +36,21 @@ class TaskDetailScreen extends StatefulWidget {
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
   late Task task;
   final _noteCtl = TextEditingController();
+  final CategoryStore _categoryStore = CategoryStore.instance;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    task = ModalRoute.of(context)!.settings.arguments as Task;
+  void initState() {
+    super.initState();
+    task = widget.task.clone();
+    _noteCtl.text = task.notes ?? '';
+    unawaited(_categoryStore.ensureLoaded());
   }
 
+  @override
+  void dispose() {
+    _noteCtl.dispose();
+    super.dispose();
+  }
   // —— pickers tái dùng ——
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -152,161 +185,152 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          // Quay lại danh sách và loại bỏ toàn bộ stack
-          onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false),
+    final categories = _categoryStore.current;
+    final categoryLabel = resolveCategoryLabel(task, categories);
+
+    return WillPopScope(
+      onWillPop: () async {
+        await _finishEditing();
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: scheme.surface,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _finishEditing,
+          ),
+          title: const Text('Chi tiết nhiệm vụ'),
+          actions: [
+            TextButton(onPressed: _finishEditing, child: const Text('LƯU')),
+          ],
         ),
-        title: const Text(''),
-        actions: [
-          PopupMenuButton(
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'delete', child: Text('Xoá')),
-              PopupMenuItem(value: 'share', child: Text('Chia sẻ')),
-            ],
-          )
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          // Category chip
-          Align(
-            alignment: Alignment.centerLeft,
-            child: PopupMenuButton<TaskCategory>(
-              initialValue: task.category,
-              onSelected: (v) => setState(() => task.category = v),
-              itemBuilder: (ctx) => TaskCategory.values
-                  .map((c) => PopupMenuItem(value: c, child: Text(categoryLabel(c))))
-                  .toList(),
-              child: Chip(
-                label: Text(categoryLabel(task.category)),
-                backgroundColor: scheme.secondaryContainer,
-                labelStyle: TextStyle(color: scheme.onSecondaryContainer),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ActionChip(
+                avatar: const Icon(Icons.folder_outlined),
+                label: Text(categoryLabel),
+                onPressed: _pickCategory,
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-
-          // Tiêu đề
-          Text(
-            task.title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-
-          Icon(Icons.water_drop, size: 36, color: scheme.secondary),
-
-          // —— SUBTASK SECTION ——
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: _addSubtaskDialog,
-            icon: const Icon(Icons.add),
-            label: const Text('Thêm nhiệm vụ phụ'),
-          ),
-          if (task.subtasks.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            ...task.subtasks.asMap().entries.map((e) {
-              final i = e.key;
-              final s = e.value;
-              return CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                value: s.done,
-                onChanged: (v) => setState(() => s.done = v ?? false),
-                title: Text(
-                  s.title,
-                  style: TextStyle(
-                    decoration: s.done ? TextDecoration.lineThrough : null,
-                    color: s.done ? Theme.of(context).disabledColor : null,
+            const SizedBox(height: 8),
+            Text(
+              task.title,
+              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Icon(Icons.water_drop, size: 36, color: scheme.secondary),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: _addSubtaskDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Thêm nhiệm vụ phụ'),
+            ),
+            if (task.subtasks.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              ...task.subtasks.asMap().entries.map((entry) {
+                final index = entry.key;
+                final subtask = entry.value;
+                return CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: subtask.done,
+                  onChanged: (v) => setState(() => subtask.done = v ?? false),
+                  title: Text(
+                    subtask.title,
+                    style: TextStyle(
+                      decoration: subtask.done ? TextDecoration.lineThrough : null,
+                      color: subtask.done ? theme.disabledColor : null,
+                    ),
                   ),
-                ),
-                secondary: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => setState(() => task.subtasks.removeAt(i)),
-                ),
-              );
-            }).toList(),
+                  secondary: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => setState(() => task.subtasks.removeAt(index)),
+                  ),
+                );
+              }),
+            ],
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.event_available_outlined),
+              title: const Text('Ngày đến hạn'),
+              trailing: _pill(_dateLabel()),
+              onTap: _pickDate,
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule_outlined),
+              title: const Text('Thời gian & Lời nhắc'),
+              trailing: _pill(_timeLabel(task.timeOfDay)),
+              onTap: _pickTime,
+            ),
+            ListTile(
+              contentPadding: const EdgeInsets.only(left: 72, right: 16),
+              title: const Text('Nhắc nhở lúc'),
+              trailing: _pill(_timeLabel(task.timeOfDay)),
+              onTap: _pickReminder,
+            ),
+            ListTile(
+              contentPadding: const EdgeInsets.only(left: 72, right: 16),
+              title: const Text('Loại lời nhắc'),
+              trailing: _pill(task.reminderBefore == null ? 'Thông báo' : 'Thông báo'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.repeat),
+              title: const Text('Lặp lại nhiệm vụ'),
+              trailing: _pill(_repeatLabel()),
+              onTap: _pickRepeat,
+            ),
+            ListTile(
+              leading: const Icon(Icons.notes_outlined),
+              title: const Text('Ghi chú'),
+              subtitle: task.notes == null || task.notes!.isEmpty
+                  ? const Text('Chạm để thêm ghi chú')
+                  : Text(task.notes!),
+              onTap: () async {
+                final text = await showDialog<String>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Ghi chú'),
+                    content: TextField(
+                      controller: _noteCtl,
+                      decoration: const InputDecoration(hintText: 'Nhập ghi chú...'),
+                      maxLines: 5,
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('HUỶ')),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, _noteCtl.text),
+                        child: const Text('LƯU'),
+                      ),
+                    ],
+                  ),
+                );
+                if (text != null) {
+                  setState(() {
+                    _noteCtl.text = text;
+                    task.notes = text.trim().isEmpty ? null : text.trim();
+                  });
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attachment),
+              title: const Text('Tập tin đính kèm'),
+              trailing: _pill('THÊM'),
+              onTap: () {},
+            ),
           ],
-          const Divider(),
-
-          // Ngày đến hạn
-          ListTile(
-            leading: const Icon(Icons.event_available_outlined),
-            title: const Text('Ngày đến hạn'),
-            trailing: _pill(_dateLabel()),
-            onTap: _pickDate,
-          ),
-
-          // Thời gian & Lời nhắc
-          ListTile(
-            leading: const Icon(Icons.schedule_outlined),
-            title: const Text('Thời gian & Lời nhắc'),
-            trailing: _pill(_timeLabel(task.timeOfDay)),
-            onTap: _pickTime,
-          ),
-          ListTile(
-            contentPadding: const EdgeInsets.only(left: 72, right: 16),
-            title: const Text('Nhắc nhở lúc'),
-            trailing: _pill(_timeLabel(task.timeOfDay)), // có thể tính từ reminderBefore nếu muốn
-            onTap: _pickReminder,
-          ),
-          ListTile(
-            contentPadding: const EdgeInsets.only(left: 72, right: 16),
-            title: const Text('Loại lời nhắc'),
-            trailing: _pill(task.reminderBefore == null ? 'Thông báo' : 'Thông báo'),
-          ),
-
-          // Lặp lại
-          ListTile(
-            leading: const Icon(Icons.repeat),
-            title: const Text('Lặp lại nhiệm vụ'),
-            trailing: _pill(_repeatLabel()),
-            onTap: _pickRepeat,
-          ),
-
-          // Ghi chú
-          ListTile(
-            leading: const Icon(Icons.notes_outlined),
-            title: const Text('Ghi chú'),
-            trailing: _pill(_noteCtl.text.isEmpty ? 'THÊM' : 'SỬA'),
-            onTap: () async {
-              final text = await showDialog<String>(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Ghi chú'),
-                  content: TextField(
-                    controller: _noteCtl,
-                    decoration: const InputDecoration(hintText: 'Nhập ghi chú...'),
-                    maxLines: 5,
-                  ),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('HUỶ')),
-                    FilledButton(onPressed: () => Navigator.pop(context, _noteCtl.text), child: const Text('LƯU')),
-                  ],
-                ),
-              );
-              if (text != null) setState(() {});
-            },
-          ),
-
-          // Tệp đính kèm
-          ListTile(
-            leading: const Icon(Icons.attachment),
-            title: const Text('Tập tin đính kèm'),
-            trailing: _pill('THÊM'),
-            onTap: () {},
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  // Tag tròn viền như ảnh 2
   Widget _pill(String text) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
@@ -319,4 +343,108 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
     );
   }
+
+  void _applyNote() {
+    task.notes = _noteCtl.text.trim().isEmpty ? null : _noteCtl.text.trim();
+  }
+
+  Future<void> _finishEditing() async {
+    _applyNote();
+    if (mounted) {
+      Navigator.pop(context, task);
+    }
+  }
+
+  Future<void> _pickCategory() async {
+    await _categoryStore.ensureLoaded();
+    final configs = _categoryStore.current;
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Text('Chọn danh mục', style: Theme.of(context).textTheme.titleMedium),
+            const Divider(),
+            for (final cfg in configs)
+              ListTile(
+                leading: Icon(
+                  _iconForCategory(cfg),
+                  color: Color(cfg.color),
+                ),
+                title: Text(cfg.label),
+                onTap: () => Navigator.pop(context, cfg.id),
+              ),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Tạo danh mục mới'),
+              onTap: () async {
+                final name = await _promptForNewCategory();
+                if (name != null && name.isNotEmpty) {
+                  await _categoryStore.createCustom(name: name);
+                  Navigator.pop(context, _categoryStore.current.last.id);
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || result == null) return;
+    final system = _categoryStore.resolveSystem(result);
+    setState(() {
+      if (system != null) {
+        task
+          ..category = system
+          ..customCategoryId = null;
+      } else {
+        task
+          ..category = TaskCategory.none
+          ..customCategoryId = result;
+      }
+    });
+  }
+
+  IconData _iconForCategory(CategoryConfig cfg) {
+    if (!cfg.isSystem) return Icons.folder_outlined;
+    final system = _categoryStore.resolveSystem(cfg.id);
+    switch (system) {
+      case TaskCategory.work:
+        return Icons.work_outline;
+      case TaskCategory.personal:
+        return Icons.self_improvement;
+      case TaskCategory.favorites:
+        return Icons.star_rounded;
+      case TaskCategory.birthday:
+        return Icons.cake_outlined;
+      case TaskCategory.none:
+      case null:
+        return Icons.folder_outlined;
+    }
+  }
+
+  Future<String?> _promptForNewCategory() async {
+    final ctl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Danh mục mới'),
+        content: TextField(
+          controller: ctl,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Tên danh mục'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('HUỶ')),
+          FilledButton(onPressed: () => Navigator.pop(context, ctl.text.trim()), child: const Text('TẠO')),
+        ],
+      ),
+    );
+  }
 }
+
+  
