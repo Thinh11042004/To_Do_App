@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../services/pro_manager.dart';
-
+import '../cloud/cloud_sync_screen.dart';
+import '../theme/theme_picker_screen.dart';
+import '../utilities/utilities_screen.dart';
+import '../feedback/feedback_screen.dart';
+import '../faq/faq_screen.dart';
+import '../settings/settings_screen.dart';
 
 class MenuTab extends StatelessWidget {
   final VoidCallback onOpenCategories;
-  final VoidCallback onUpgradePro; // vẫn giữ, nhưng sẽ không dùng khi đã Pro
-  const MenuTab({super.key, required this.onOpenCategories, required this.onUpgradePro});
+  final VoidCallback onUpgradePro;
+  final VoidCallback? onOpenFavorites;
+  const MenuTab({super.key, required this.onOpenCategories, required this.onUpgradePro, this.onOpenFavorites});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +70,6 @@ class MenuTab extends StatelessWidget {
       child: ListView(
         children: [
           header,
-
           //  Ẩn nếu đã Pro
           ValueListenableBuilder<bool>(
             valueListenable: ProManager.instance.isPro,
@@ -77,20 +82,43 @@ class MenuTab extends StatelessWidget {
               );
             },
           ),
-
-          item(Icons.star, 'Star Task'),
-          item(Icons.cloud_sync, 'Đồng bộ đám mây Firebase',
-              trailing: const Icon(Icons.verified, color: Colors.green)),
-          item(Icons.widgets, 'Thể loại',
-              trailing: const Icon(Icons.keyboard_arrow_down), onTap: onOpenCategories),
+          item(Icons.star, 'Star Task', onTap: onOpenFavorites),
+          item(
+            Icons.cloud_sync,
+            'Đồng bộ đám mây Firebase',
+            trailing: const Icon(Icons.verified, color: Colors.green),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CloudSyncScreen()),
+            ),
+          ),
+          item(
+            Icons.widgets,
+            'Thể loại',
+            trailing: const Icon(Icons.keyboard_arrow_down),
+            onTap: onOpenCategories,
+          ),
           const Divider(height: 24),
-          item(Icons.brush, 'Chủ đề'),
-          item(Icons.extension, 'Tiện ích'),
-          item(Icons.favorite, 'Quyên góp'),
-          item(Icons.apps, 'Ứng dụng Gia đình (AD)'),
-          item(Icons.feedback_outlined, 'Phản hồi'),
-          item(Icons.help_outline, 'Hỏi Đáp'),
-          item(Icons.settings, 'Setting'),
+          item(Icons.brush, 'Chủ đề', onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ThemePickerScreen()),
+          )),
+          item(Icons.extension, 'Tiện ích', onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UtilitiesScreen()),
+          )),
+          item(Icons.feedback_outlined, 'Phản hồi', onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const FeedbackScreen()),
+          )),
+          item(Icons.help_outline, 'Hỏi Đáp', onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const FAQScreen()),
+          )),
+          item(Icons.settings, 'Setting', onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+          )),
           const SizedBox(height: 24),
         ],
       ),

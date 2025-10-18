@@ -1,32 +1,33 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../models/task.dart';
-import '../widgets/task_item.dart';
+import '../../models/task.dart';
+import '../../widgets/task_item.dart';
 import 'add_task_sheet.dart';
 import 'category_manager_screen.dart';
 import 'task_detail_screen.dart';
 
-// DB & Repo
-import '../services/db_service.dart';
-import '../models/domain/entities/task_entity.dart';
-import '../models/data/repositories/task_repository.dart';
-import '../services/notification_service.dart';
+import '../../services/notification_service.dart';
 
 // tách tab
-import 'tabs/menu_tab.dart';
-import 'tabs/calendar_tab.dart';
-import 'tabs/me_tab.dart';
+import '../menu/menu_tab.dart';
+import '../tabs/calendar_tab.dart';
+import '../tabs/me_tab.dart';
+import '../../services/auth_service.dart';
+import '../auth/login_screen.dart';
+
 
 // search
-import 'search/task_search_delegate.dart';
+import '../search/task_search_delegate.dart';
 
-// 👇 thêm: Pro demo
-import '../services/pro_manager.dart';
-import 'Pay/upgrade_pro_demo_screen.dart';
-import '../services/category_store.dart';
+// Pro demo
+import '../../services/pro_manager.dart';
+import '../../services/category_store.dart';
+import '../../utils/upgrade_flow.dart';
+
+import 'task_list_controller.dart';
+import '../task_list_overview.dart';
 
 enum SortOption {
   dueDate,
@@ -46,13 +47,30 @@ enum _MenuAction {
   upgradePro,
 }
 
+class _TabConfig {
+  final String title;
+  final IconData icon;
+  final List<Color> gradient;
+  final bool useGradient;
+  final bool showFab;
+  final Widget child;
+
+  const _TabConfig({
+    required this.title,
+    required this.icon,
+    required this.gradient,
+    required this.useGradient,
+    required this.showFab,
+    required this.child,
+  });
+}
+
 class TaskListScreen extends StatefulWidget {
   final List<Task> tasks; // giữ tham số cũ để không phá route khác
   final void Function(Task) onAdd;
   final void Function(Task) onUpdate;
 
   const TaskListScreen({
-    super.key,
     required this.tasks,
     required this.onAdd,
     required this.onUpdate,
@@ -63,166 +81,23 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-  // ----- DB + memory -----
-  final TaskRepository _repo = DbService.tasks;
+  // ----- Controller -----
+  final TaskListController _controller = TaskListController();
   final List<Task> _items = [];
-  StreamSubscription<List<TaskEntity>>? _subscription;
   final CategoryStore _categoryStore = CategoryStore.instance;
-
-  // Map DB -> UI Task
-  Task _fromEntity(TaskEntity e) {
-    final due = e.dueAt?.toLocal();
-
-    Duration? remindBefore;
-    if (e.remindAt != null && due != null) {
-      final diff =
-          due.millisecondsSinceEpoch - e.remindAt!.millisecondsSinceEpoch;
-      if (diff > 0) remindBefore = Duration(milliseconds: diff);
-    }
-
-    TimeOfDay? timeOfDay;
-    if (due != null && (due.hour != 0 || due.minute != 0)) {
-      timeOfDay = TimeOfDay(hour: due.hour, minute: due.minute);
-    }
-
-    final categoryId = e.categoryId;
-    final TaskCategory? category = _categoryFromId(categoryId);
-    final String? customCategoryId = category == null ? categoryId : null;
-
-    return Task(
-      id: (e.id ?? 0).toString(),
-      title: e.title,
-      category: category ?? TaskCategory.none,
-      customCategoryId: customCategoryId,
-      dueDate: due,
-      timeOfDay: timeOfDay,
-      reminderBefore: remindBefore,
-      repeat: RepeatRule.none,
-      subtasks: const [],
-      done: e.status == 'done',
-      favorite: e.favorite,
-      notes: e.notes,
-      createdAt: e.createdAt.toLocal(),
-      updatedAt: e.updatedAt.toLocal(),
-    );
-  }
-
-  TaskCategory? _categoryFromId(String? id) {
-    switch (id) {
-      case 'work':
-        return TaskCategory.work;
-      case 'personal':
-        return TaskCategory.personal;
-      case 'favorite':
-        return TaskCategory.favorites;
-      case 'birthday':
-        return TaskCategory.birthday;
-      case 'none':
-        return TaskCategory.none;
-      default:
-        return null;
-    }
-  }
-
-  String? _categoryToId(TaskCategory category) {
-    switch (category) {
-      case TaskCategory.work:
-        return 'work';
-      case TaskCategory.personal:
-        return 'personal';
-      case TaskCategory.favorites:
-        return 'favorite';
-      case TaskCategory.birthday:
-        return 'birthday';
-      case TaskCategory.none:
-        return null;
-    }
-  }
-
-  // Map UI -> DB entity
-  TaskEntity _toEntity(Task t) {
-    DateTime? due;
-    if (t.dueDate != null && t.timeOfDay != null) {
-      due = DateTime(
-        t.dueDate!.year,
-        t.dueDate!.month,
-        t.dueDate!.day,
-        t.timeOfDay!.hour,
-        t.timeOfDay!.minute,
-      );
-    } else {
-      due = t.dueDate;
-    }
-
-    final int? remindAtMs = (due != null && t.reminderBefore != null)
-        ? due.millisecondsSinceEpoch - t.reminderBefore!.inMilliseconds
-        : null;
-
-    return TaskEntity(
-      id: int.tryParse(t.id),
-      title: t.title,
-      notes: t.notes,
-      dueAt: due,
-      remindAt:
-          remindAtMs != null ? DateTime.fromMillisecondsSinceEpoch(remindAtMs) : null,
-      status: t.done ? 'done' : 'todo',
-      priority: 'normal',
-      categoryId: t.customCategoryId ?? _categoryToId(t.category),
-      tags: const [],
-      favorite: t.favorite,
-      createdAt: t.createdAt.toUtc(),
-      updatedAt: t.updatedAt.toUtc(),
-    );
-  }
 
   // -------------------- CRUD helpers (đÃ GỘP, KHÔNG TRÙNG) --------------------
 
   Future<int> _addTask(Task newTask) async {
-    final now = DateTime.now();
-    newTask
-      ..createdAt = now
-      ..updatedAt = now;
-
-    final entity = _toEntity(newTask);
-    final id = await _repo.add(entity);
-
-    // gán id lại cho Task UI
-    newTask.id = id.toString();
-
-    // chỉ đặt reminder nếu chưa hoàn thành
-    if (!newTask.done) {
-      await NotificationService.instance
-          .scheduleForTask(entity.copyWith(id: id));
-    }
-    return id;
+    return _controller.addTask(newTask);
   }
 
   Future<void> _updateTask(Task t) async {
-    // cập nhật thời gian sửa
-    t.updatedAt = DateTime.now();
-
-    final id = int.tryParse(t.id);
-    if (id == null) return;
-
-    final entity = _toEntity(t).copyWith(id: id);
-
-    // lưu DB (updatedAt đã được set mới)
-    await _repo.update(entity);
-
-    // quản lý nhắc nhở theo trạng thái
-    if (t.done) {
-      await NotificationService.instance.cancelReminder(id);
-    } else {
-      await NotificationService.instance.scheduleForTask(entity);
-    }
+    await _controller.updateTask(t);
   }
 
   Future<void> _deleteTaskById(String? id) async {
-    final intId = int.tryParse(id ?? '');
-    if (intId != null) {
-      await _repo.delete(intId);
-      await NotificationService.instance.cancelReminder(intId);
-    }
+    await _controller.deleteTaskById(id);
   }
 
   void _showStatusSnackBar(String message, {IconData? icon, Color? iconColor}) {
@@ -270,140 +145,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  Future<void> _launchUri(Uri uri) async {
-    try {
-      final success = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!success && mounted) {
-        _showStatusSnackBar('Không thể mở liên hệ, vui lòng thử lại sau.', icon: Icons.error_outline);
-      }
-    } catch (e) {
-      if (mounted) {
-        _showStatusSnackBar('Không thể mở liên hệ, vui lòng thử lại sau.', icon: Icons.error_outline);
-      }
-    }
-  }
-
-  void _showContactSheet() {
-    if (!mounted) return;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) {
-        return DraggableScrollableSheet(
-          initialChildSize: .4,
-          minChildSize: .32,
-          maxChildSize: .6,
-          expand: false,
-          builder: (context, controller) {
-            return Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                gradient: LinearGradient(
-                  colors: [
-                    scheme.primaryContainer.withOpacity(.92),
-                    scheme.secondaryContainer.withOpacity(.9),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: scheme.primary.withOpacity(.18),
-                    blurRadius: 26,
-                    offset: const Offset(0, 14),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                child: SingleChildScrollView(
-                  controller: controller,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: scheme.primary.withOpacity(.18),
-                            ),
-                            child: Icon(Icons.support_agent, color: scheme.primary),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Cần trợ giúp?',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: scheme.onPrimaryContainer,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Liên hệ với chúng tôi để được hỗ trợ nhanh chóng.',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: scheme.onPrimaryContainer.withOpacity(.85),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _ContactAction(
-                        icon: Icons.chat_bubble_outline,
-                        label: 'Nhắn tin Zalo',
-                        subtitle: 'Nhận phản hồi trong vài phút',
-                        color: scheme.primary,
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          _launchUri(Uri.parse('https://zalo.me/0372513965'));
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _ContactAction(
-                        icon: Icons.email_outlined,
-                        label: 'Gửi email',
-                        subtitle: 'support@todoapp.vn',
-                        color: scheme.secondary,
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          _launchUri(Uri(scheme: 'mailto', path: 'support@todoapp.vn'));
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _ContactAction(
-                        icon: Icons.phone_outlined,
-                        label: 'Gọi đường dây nóng',
-                        subtitle: '0372 513 965',
-                        color: scheme.tertiary,
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          _launchUri(Uri(scheme: 'tel', path: '0372513965'));
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   void _toggleFavorite(Task task) {
     final next = !task.favorite;
     setState(() => task.favorite = next);
@@ -418,7 +159,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  Future<void> _createTask() async {
+    Future<void> _createTask() async {
+    if (!await _ensureCanCreateTask()) {
+      return;
+    }
     HapticFeedback.mediumImpact();
     final newTask = await showModalBottomSheet<Task>(
       context: context,
@@ -439,6 +183,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _createTaskForDate(DateTime date) async {
+    if (!await _ensureCanCreateTask()) {
+      return;
+    }
     HapticFeedback.mediumImpact();
     final initial = Task(
       id: UniqueKey().toString(),
@@ -480,8 +227,49 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  Future<T?> _pushPage<T>(Widget page) {
+Future<T?> _pushPage<T>(Widget page) {
     return Navigator.of(context).push<T>(_buildPageRoute(page));
+  }
+
+  Future<void> _startUpgradeFlow() async {
+    if (!mounted) return;
+    final upgraded = await UpgradeFlow.start(context);
+    if (!mounted) return;
+    setState(() {});
+    if (upgraded) {
+      _showStatusSnackBar(
+        'Đã kích hoạt Pro thành công!',
+        icon: Icons.workspace_premium,
+        iconColor: Theme.of(context).colorScheme.secondary,
+      );
+    }
+  }
+
+  Future<bool> _ensureCanCreateTask() async {
+    if (ProManager.instance.isPro.value) {
+      return true;
+    }
+    if (_items.length < 10) {
+      return true;
+    }
+    if (!mounted) return false;
+    final shouldUpgrade = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Giới hạn nhiệm vụ'),
+        content: const Text('Tài khoản thường chỉ tạo tối đa 10 nhiệm vụ. Nâng cấp Pro để mở khoá không giới hạn và nhiệm vụ phụ.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Để sau')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Nâng cấp Pro')),
+        ],
+      ),
+    );
+    if (shouldUpgrade == true) {
+      await _startUpgradeFlow();
+      if (!mounted) return false;
+      return ProManager.instance.isPro.value;
+    }
+    return false;
   }
 
   // -------------------- UI state --------------------
@@ -566,13 +354,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
       _items.addAll(widget.tasks.map((task) => task.clone()));
     }
     unawaited(_categoryStore.ensureLoaded());
-    // Lắng nghe DB → cập nhật UI + đồng bộ notifications
-    _subscription = _repo.watchAll().listen(
+    _controller.repo.watchAll().listen(
       (rows) {
         setState(() {
           _items
             ..clear()
-            ..addAll(rows.map(_fromEntity));
+            ..addAll(rows.map(_controller.fromEntity));
         });
 
         for (final entity in rows) {
@@ -592,27 +379,65 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   @override
   void dispose() {
-    _subscription?.cancel();
     super.dispose();
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
-    final titles = ['Menu', 'Nhiệm vụ', 'Lịch', 'Của tôi'];
-    final view = _buildTabView(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final gradients = [
-      [scheme.secondaryContainer.withOpacity(.55), scheme.surface],
-      [scheme.primaryContainer.withOpacity(.55), scheme.surface],
-      [scheme.tertiaryContainer.withOpacity(.55), scheme.surface],
-      [scheme.surfaceTint.withOpacity(.35), scheme.surface],
+
+    final tabs = [
+      _TabConfig(
+        title: 'Menu',
+        icon: Icons.menu,
+        gradient: [scheme.secondaryContainer.withOpacity(.55), scheme.surface],
+        useGradient: false,
+        showFab: false,
+        child: MenuTab(
+          onOpenCategories: () => _pushPage(
+            CategoryManagerScreen(tasks: _items),
+          ),
+          onUpgradePro: () => _startUpgradeFlow(),
+        ),
+      ),
+      _TabConfig(
+        title: 'Nhiệm vụ',
+        icon: Icons.checklist,
+        gradient: [scheme.primaryContainer.withOpacity(.55), scheme.surface],
+        useGradient: true,
+        showFab: true,
+        child: _buildTasksView(context),
+      ),
+      _TabConfig(
+        title: 'Lịch',
+        icon: Icons.calendar_month,
+        gradient: [scheme.tertiaryContainer.withOpacity(.55), scheme.surface],
+        useGradient: false,
+        showFab: false,
+        child: CalendarTab(
+          tasks: _items,
+          onOpenTask: _openTaskDetail,
+          onCreateForDate: _createTaskForDate,
+        ),
+      ),
+      _TabConfig(
+        title: 'Của tôi',
+        icon: Icons.person_rounded,
+        gradient: [scheme.surfaceTint.withOpacity(.35), scheme.surface],
+        useGradient: false,
+        showFab: false,
+        child: MeTab(
+          tasks: _items,
+          onUpgrade: () => _startUpgradeFlow(),
+        ),
+      ),
     ];
-    final gradient = gradients[_tabIndex.clamp(0, gradients.length - 1)];
-    final useGradient = _tabIndex == 1;
+
+    final current = tabs[_tabIndex.clamp(0, tabs.length - 1)];
 
     final scaffold = Scaffold(
-      backgroundColor: useGradient ? Colors.transparent : theme.scaffoldBackgroundColor,
+      backgroundColor: current.useGradient ? Colors.transparent : theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
@@ -627,20 +452,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
             ),
           ),
           child: Text(
-            titles[_tabIndex],
+            current.title,
             key: ValueKey(_tabIndex),
           ),
         ),
-        actions: _tabIndex == 1
-            ? [
-                IconButton(
-                  tooltip: 'Liên hệ hỗ trợ',
-                  icon: const Icon(Icons.support_agent),
-                  onPressed: _showContactSheet,
-                ),
-                _buildMoreMenu(),
-              ]
-            : null,
+        actions: _tabIndex == 1 ? [_buildMoreMenu()] : null,
       ),
       body: SafeArea(
         child: AnimatedSwitcher(
@@ -659,7 +475,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           },
           child: KeyedSubtree(
             key: ValueKey('tab-$_tabIndex'),
-            child: view,
+            child: current.child,
           ),
         ),
       ),
@@ -669,7 +485,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
           child: child,
         ),
-        child: _tabIndex == 1
+        child: current.showFab
             ? FloatingActionButton(
                 key: const ValueKey('fab'),
                 onPressed: _createTask,
@@ -683,22 +499,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
         selectedIndex: _tabIndex,
         onDestinationSelected: (i) => setState(() => _tabIndex = i),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.menu), label: 'Menu'),
-          NavigationDestination(icon: Icon(Icons.checklist), label: 'Nhiệm vụ'),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month),
-            label: 'Lịch',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_rounded),
-            label: 'Của tôi',
-          ),
+        destinations: [
+          for (final tab in tabs)
+            NavigationDestination(
+              icon: Icon(tab.icon),
+              label: tab.title,
+            ),
         ],
       ),
     );
 
-    if (!useGradient) {
+    if (!current.useGradient) {
       return scaffold;
     }
 
@@ -707,7 +518,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: gradient,
+          colors: current.gradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -787,11 +598,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
         setState(() => _compact = !_compact);
         break;
       case _MenuAction.upgradePro:
-        await _pushPage(const UpgradeProDemoScreen());
-        if (mounted) setState(() {});
+        await _startUpgradeFlow();
         break;
     }
   }
+
 
   Future<SortOption?> _showSortDialog() async {
     SortOption temp = _sort;
@@ -839,39 +650,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   // -------------------- BODY --------------------
-  Widget _buildTabView(BuildContext context) {
-    switch (_tabIndex) {
-      case 0:
-        return MenuTab(
-          onOpenCategories: () => _pushPage(
-            CategoryManagerScreen(tasks: _items),
-          ),
-          onUpgradePro: () {
-            _pushPage(const UpgradeProDemoScreen()).then((_) {
-              if (mounted) setState(() {});
-            });
-          },
-        );
-      case 2:
-        return CalendarTab(
-          tasks: _items,
-          onOpenTask: _openTaskDetail,
-          onCreateForDate: _createTaskForDate,
-        );
-      case 3:
-        return MeTab(
-          tasks: _items,
-          onUpgrade: () {
-            _pushPage(const UpgradeProDemoScreen()).then((_) {
-              if (mounted) setState(() {});
-            });
-          },
-        );
-      default:
-        return _buildTasksView(context);
-    }
-  }
-
   Future<void> _openTaskDetail(Task task) async {
     final detailCopy = task.clone();
     final result = await Navigator.of(context).push<Task>(
@@ -1169,7 +947,21 @@ class _TaskListScreenState extends State<TaskListScreen> {
           key: ValueKey('tasks-$filterKey-${_sort.name}-${_items.length}-${hasData ? 'data' : 'empty'}'),
           physics: physics,
           slivers: [
-            SliverToBoxAdapter(child: _buildOverviewCard(context)),
+            SliverToBoxAdapter(
+              child: TaskListOverviewCard(
+                total: _items.length,
+                completed: _items.where((t) => t.done).length,
+                pending: _items.length - _items.where((t) => t.done).length,
+                dueToday: _items.where((t) {
+                  if (t.dueDate == null || t.done) return false;
+                  return DateUtils.isSameDay(t.dueDate, DateTime.now());
+                }).length,
+                nextLabel: _nextDueTask() == null
+                    ? 'Tạo nhiệm vụ mới để bắt đầu ngày làm việc.'
+                    : 'Tiếp theo: ${_nextDueTask()!.title}\n${_formatDueLabel(_nextDueTask()!) ?? 'Không có hạn cụ thể'}',
+                metricStat: _metricStat,
+              ),
+            ),
             SliverToBoxAdapter(child: chipBar),
             if (hasData)
               SliverPadding(
@@ -1199,115 +991,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildOverviewCard(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final total = _items.length;
-    final completed = _items.where((t) => t.done).length;
-    final pending = total - completed;
-    final today = DateTime.now();
-    final dueToday = _items.where((t) {
-      if (t.dueDate == null || t.done) return false;
-      return DateUtils.isSameDay(t.dueDate, today);
-    }).length;
-    final nextTask = _nextDueTask();
-    final nextLabel = nextTask == null
-        ? 'Tạo nhiệm vụ mới để bắt đầu ngày làm việc.'
-        : 'Tiếp theo: ${nextTask.title}\n${_formatDueLabel(nextTask) ?? 'Không có hạn cụ thể'}';
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutCubic,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              scheme.primaryContainer.withOpacity(.75),
-              scheme.surface,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: scheme.primary.withOpacity(.18),
-              blurRadius: 28,
-              offset: const Offset(0, 16),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tổng quan hôm nay',
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 14),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isCompact = constraints.maxWidth < 520;
-                  final tileWidth = isCompact
-                      ? constraints.maxWidth
-                      : (constraints.maxWidth - 24) / 3;
-                  return Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _metricStat(
-                        context,
-                        label: 'Đang mở',
-                        value: pending,
-                        icon: Icons.circle_outlined,
-                        color: scheme.primary,
-                        width: tileWidth,
-                      ),
-                      _metricStat(
-                        context,
-                        label: 'Hoàn thành',
-                        value: completed,
-                        icon: Icons.check_circle,
-                        color: scheme.secondary,
-                        width: tileWidth,
-                      ),
-                      _metricStat(
-                        context,
-                        label: 'Đến hạn hôm nay',
-                        value: dueToday,
-                        icon: Icons.today,
-                        color: scheme.tertiary,
-                        width: tileWidth,
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 350),
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: child,
-                ),
-                child: Text(
-                  nextLabel,
-                  key: ValueKey(nextLabel),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -1459,80 +1142,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
       );
 }
 
-class _ContactAction extends StatelessWidget {
-  const _ContactAction({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: color.withOpacity(.12),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withOpacity(.18),
-                ),
-                child: Icon(icon, color: color),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(.7),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Icon(Icons.arrow_forward_ios, size: 16, color: color),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SliverAnimatedSwitcher extends StatelessWidget {
   const _SliverAnimatedSwitcher({
-    super.key,
     required this.duration,
     required this.switchInCurve,
     required this.switchOutCurve,
@@ -1556,6 +1167,41 @@ class _SliverAnimatedSwitcher extends StatelessWidget {
         transitionBuilder: transitionBuilder,
         child: child,
       ),
+    );
+  }
+}
+
+class FavoriteTaskListScreen extends StatelessWidget {
+  final List<Task> tasks;
+  const FavoriteTaskListScreen({required this.tasks, Key? key}) : super(key: key);
+
+  void _openTaskDetail(BuildContext context, Task task) {
+    Navigator.of(context).push(TaskDetailScreen.route(task));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Star Task')),
+      body: tasks.isEmpty
+          ? const Center(child: Text('Không có nhiệm vụ yêu thích.'))
+          : ListView.builder(
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                final task = tasks[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    leading: const Icon(Icons.star, color: Colors.amber),
+                    title: Text(task.title),
+                    subtitle: task.dueDate != null
+                        ? Text('Đến hạn: ${task.dueDate}')
+                        : null,
+                    onTap: () => _openTaskDetail(context, task),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

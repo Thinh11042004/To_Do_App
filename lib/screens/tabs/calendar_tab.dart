@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../../models/task.dart';
@@ -43,56 +44,81 @@ class _CalendarTabState extends State<CalendarTab> {
 
     final scheme = Theme.of(context).colorScheme;
 
-    return Container(
-      color: scheme.surface,
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  scheme.primary.withOpacity(.85),
-                  scheme.secondary.withOpacity(.75),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return DecoratedBox(
+      decoration: BoxDecoration(color: scheme.surface),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableHeight = constraints.maxHeight.isFinite ? constraints.maxHeight : 0.0;
+          final calendarHeight = availableHeight > 0
+              ? math.min(math.max(availableHeight * .55, 280.0), 420.0)
+              : 360.0;
+
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        scheme.primary.withOpacity(.85),
+                        scheme.secondary.withOpacity(.75),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: SizedBox(
+                    height: calendarHeight,
+                    child: CalendarDatePicker(
+                      initialDate: _selected,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                      onDateChanged: (d) => setState(() => _selected = d),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            child: CalendarDatePicker(
-              initialDate: _selected,
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-              onDateChanged: (d) => setState(() => _selected = d),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Ngày ${_selected.day}/${_selected.month}/${_selected.year}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Ngày ${_selected.day}/${_selected.month}/${_selected.year}',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      FilledButton.icon(
+                        onPressed: () => widget.onCreateForDate(_selected),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Thêm nhiệm vụ'),
+                      ),
+                    ],
                   ),
                 ),
-                FilledButton.icon(
-                  onPressed: () => widget.onCreateForDate(_selected),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Thêm nhiệm vụ'),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: dayTasks.isEmpty
-                ? _emptySchedule(context)
-                : ListView.builder(
+              ),
+              if (dayTasks.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
-                    itemCount: dayTasks.length,
-                    itemBuilder: (ctx, i) => _calendarTaskCard(context, dayTasks[i]),
+                    child: _emptySchedule(context),
                   ),
-          ),
-        ],
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _calendarTaskCard(context, dayTasks[i]),
+                      childCount: dayTasks.length,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../models/task.dart';
-import '../services/category_store.dart';
+import '../../models/task.dart';
+import '../../services/category_store.dart';
 
 class CategoryManagerScreen extends StatefulWidget {
   final List<Task> tasks;

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
 import '../../services/pro_manager.dart';
+import '../auth/login_screen.dart';
 
 class UpgradeProDemoScreen extends StatefulWidget {
   const UpgradeProDemoScreen({super.key});
@@ -25,6 +27,9 @@ class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
 
   Future<void> _simulatePaid() async {
     if (_processing) return;
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
     setState(() => _processing = true);
 
     try {
@@ -76,6 +81,9 @@ class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
       return;
     }
 
+    if (!await _ensureLoggedIn()) {
+          return;
+        }
     setState(() => _processing = true);
     try {
       await Future.delayed(const Duration(milliseconds: 400)); // mô phỏng
@@ -97,16 +105,44 @@ class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final loggedIn = AuthService.instance.currentUser != null;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nâng cấp Pro (Demo)')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (!loggedIn)
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Vui lòng đăng nhập', style: textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    const Text('Bạn cần đăng nhập trước khi nâng cấp lên Pro.'),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: _processing
+                          ? null
+                          : () async {
+                              await _ensureLoggedIn();
+                              if (!mounted) return;
+                              setState(() {});
+                            },
+                      child: const Text('Đăng nhập'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (!loggedIn) const SizedBox(height: 12),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
@@ -279,7 +315,32 @@ class _UpgradeProDemoScreenState extends State<UpgradeProDemoScreen> {
         ],
       ),
     );
+ }
+
+  Future<bool> _ensureLoggedIn() async {
+    if (AuthService.instance.currentUser != null) {
+      return true;
+    }
+
+    final shouldLogin = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Cần đăng nhập'),
+        content: const Text('Bạn phải đăng nhập để tiếp tục nâng cấp tài khoản Pro.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Để sau')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Đăng nhập')),
+        ],
+      ),
+    );
+
+    if (shouldLogin == true && mounted) {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    }
+
+    return AuthService.instance.currentUser != null;
   }
+
 
   Widget _methodTile(
     BuildContext context, {

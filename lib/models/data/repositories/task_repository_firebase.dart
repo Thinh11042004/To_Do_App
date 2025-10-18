@@ -24,6 +24,7 @@ class TaskRepositoryFirebase implements TaskRepository {
       'categoryId': task.categoryId,
       'tags': task.tags,
       'favorite': task.favorite,
+      'subtasks': task.subtasks.map((s) => s.toMap()).toList(),
       'createdAt': Timestamp.fromDate(task.createdAt.toUtc()),
       'updatedAt': Timestamp.fromDate(task.updatedAt.toUtc()),
     };
@@ -47,6 +48,18 @@ class TaskRepositoryFirebase implements TaskRepository {
       categoryId: data['categoryId'] as String?,
       tags: (data['tags'] as List<dynamic>? ?? const []).cast<String>(),
       favorite: data['favorite'] as bool? ?? false,
+      subtasks: (data['subtasks'] as List<dynamic>? ?? const [])
+          .map((raw) {
+            if (raw is Map<String, dynamic>) {
+              return SubTaskEntity.fromMap(raw);
+            }
+            if (raw is Map) {
+              return SubTaskEntity.fromMap(raw.map((key, value) => MapEntry(key.toString(), value)));
+            }
+            return null;
+          })
+          .whereType<SubTaskEntity>()
+          .toList(),
       createdAt: (created ?? Timestamp.now()).toDate().toLocal(),
       updatedAt: (updated ?? Timestamp.now()).toDate().toLocal(),
     );

@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/task.dart';
-import '../services/category_store.dart';
+import '../../models/task.dart';
+import '../../services/category_store.dart';
+import '../../services/pro_manager.dart';
+import '../../utils/upgrade_flow.dart';
 
 class AddTaskSheet extends StatefulWidget {
   final Task? initial; // dùng cho Template
@@ -352,46 +354,91 @@ Future<void> _pickRepeat() async {
           const Divider(height: 24),
 
           // ====== NHIỆM VỤ PHỤ ======
-          Row(
-            children: [
-              const Text('Nhiệm vụ phụ'),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _subCtl,
-                  decoration: InputDecoration(
-                    hintText: 'Nhập nhiệm vụ phụ',
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: () {
-                        if (_subCtl.text.trim().isEmpty) return;
-                        setState(() {
-                          _subs.add(SubTask(title: _subCtl.text.trim()));
-                          _subCtl.clear();
-                        });
-                      },
-                    ),
+          ValueListenableBuilder<bool>(
+            valueListenable: ProManager.instance.isPro,
+            builder: (_, isPro, __) {
+              if (!isPro) {
+                final scheme = Theme.of(context).colorScheme;
+                final textTheme = Theme.of(context).textTheme;
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceVariant.withOpacity(.4),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: scheme.outline.withOpacity(.2)),
                   ),
-                ),
-              ),
-            ],
-          ),
-          Column(
-            children: _subs.asMap().entries.map((e) {
-              final i = e.key;
-              final s = e.value;
-              return CheckboxListTile(
-                value: s.done,
-                onChanged: (v) => setState(() => _subs[i].done = v ?? false),
-                title: Text(s.title),
-                secondary: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => setState(() => _subs.removeAt(i)),
-                ),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Nâng cấp để thêm nhiệm vụ phụ',
+                          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tài khoản Pro mở khoá nhiệm vụ phụ và số lượng nhiệm vụ không giới hạn.',
+                        style: textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        onPressed: () async {
+                          final upgraded = await UpgradeFlow.start(context);
+                          if (upgraded && mounted) setState(() {});
+                        },
+                        icon: const Icon(Icons.workspace_premium),
+                        label: const Text('Nâng cấp Pro'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Nhiệm vụ phụ', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _subCtl,
+                          decoration: InputDecoration(
+                            hintText: 'Nhập nhiệm vụ phụ',
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: () {
+                                if (_subCtl.text.trim().isEmpty) return;
+                                setState(() {
+                                  _subs.add(SubTask(title: _subCtl.text.trim()));
+                                  _subCtl.clear();
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    children: _subs.asMap().entries.map((e) {
+                      final i = e.key;
+                      final s = e.value;
+                      return CheckboxListTile(
+                        value: s.done,
+                        onChanged: (v) => setState(() => _subs[i].done = v ?? false),
+                        title: Text(s.title),
+                        secondary: IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(() => _subs.removeAt(i)),
+                        ),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      );
+                    }).toList(),
+                  ),
+                ],
               );
-            }).toList(),
+            },
           ),
 
           const SizedBox(height: 12),

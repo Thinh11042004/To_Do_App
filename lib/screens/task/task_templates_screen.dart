@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/task.dart';
+import '../../models/task.dart';
 
 class TaskTemplatesScreen extends StatelessWidget {
   const TaskTemplatesScreen({super.key});
