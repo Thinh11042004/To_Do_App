@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/auth_service.dart';
+import '../../services/pro_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,15 +14,15 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _register = false;
   bool _loading = false;
 
-  final _nameCtl = TextEditingController();
   final _emailCtl = TextEditingController();
   final _passCtl = TextEditingController();
+  final _confirmCtl = TextEditingController();
 
   @override
   void dispose() {
-    _nameCtl.dispose();
     _emailCtl.dispose();
     _passCtl.dispose();
+    _confirmCtl.dispose();
     super.dispose();
   }
 
@@ -33,14 +34,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submitEmail() async {
+    if (_register && _passCtl.text.trim() != _confirmCtl.text.trim()) {
+      _showError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
     setState(() => _loading = true);
     try {
       if (_register) {
         await AuthService.instance.registerWithEmail(
           email: _emailCtl.text.trim(),
           password: _passCtl.text.trim(),
-          displayName: _nameCtl.text.trim(),
         );
+        await ProManager.instance.resetPro(); // Đảm bảo tài khoản mới không tự động Pro
       } else {
         await AuthService.instance.signInWithEmail(
           _emailCtl.text.trim(),
@@ -82,14 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 16),
-          if (_register)
-            TextField(
-              controller: _nameCtl,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Tên hiển thị (tuỳ chọn)',
-              ),
-            ),
           const SizedBox(height: 8),
           TextField(
             controller: _emailCtl,
@@ -103,6 +100,14 @@ class _LoginScreenState extends State<LoginScreen> {
             obscureText: true,
             decoration: const InputDecoration(labelText: 'Mật khẩu'),
           ),
+          if (_register) ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _confirmCtl,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Xác nhận mật khẩu'),
+            ),
+          ],
           const SizedBox(height: 12),
           FilledButton(
             onPressed: _loading ? null : _submitEmail,
