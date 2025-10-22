@@ -43,6 +43,12 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     _repeat = i?.repeat ?? RepeatRule.none;
     _subs.addAll(i?.subtasks ?? []);
 
+    // NEW: Ensure default date/time are always set
+    final now = DateTime.now();
+    _date ??= DateTime(now.year, now.month, now.day);
+    final tod = TimeOfDay.now();
+    _time ??= TimeOfDay(hour: tod.hour, minute: tod.minute);
+
     // Sau khi render frame đầu tiên thì focus vào TextField + gọi IME
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -400,7 +406,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                   padding: const EdgeInsets.all(16),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: scheme.surfaceVariant.withOpacity(.4),
+                    color: scheme.surfaceContainerHighest.withOpacity(.4),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: scheme.outline.withOpacity(.2)),
                   ),
@@ -488,13 +494,18 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
           FilledButton(
             onPressed: () {
               if (_title.text.trim().isEmpty) return;
+              // Enforce mandatory date & time
+              final now = DateTime.now();
+              final ensuredDate = _date ?? DateTime(now.year, now.month, now.day);
+              final ensuredTime = _time ?? TimeOfDay(hour: now.hour, minute: now.minute);
+
               final newTask = Task(
                 id: UniqueKey().toString(),
                 title: _title.text.trim(),
                 category: _category,
                 customCategoryId: _customCategoryId,
-                dueDate: _date,
-                timeOfDay: _time,
+                dueDate: ensuredDate,
+                timeOfDay: ensuredTime,
                 reminderBefore: _remind,
                 repeat: _repeat,
                 subtasks: _subs,

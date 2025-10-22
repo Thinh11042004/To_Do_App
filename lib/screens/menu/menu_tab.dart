@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/pro_manager.dart';
+import '../../services/auth_service.dart';
 import '../cloud/cloud_sync_screen.dart';
 import '../theme/theme_picker_screen.dart';
 import '../utilities/utilities_screen.dart';
@@ -70,15 +71,23 @@ class MenuTab extends StatelessWidget {
       child: ListView(
         children: [
           header,
-          //  Ẩn nếu đã Pro
-          ValueListenableBuilder<bool>(
-            valueListenable: ProManager.instance.isPro,
-            builder: (_, isPro, __) {
-              if (isPro) return const SizedBox.shrink();
-              return item(
-                Icons.workspace_premium,
-                'Nâng cấp lên Pro',
-                onTap: onUpgradePro,
+          // Ẩn nếu đã Pro và đã đăng nhập
+          StreamBuilder(
+            stream: AuthService.instance.userChanges,
+            initialData: AuthService.instance.currentUser,
+            builder: (context, snapshot) {
+              final loggedIn = snapshot.data != null;
+              return ValueListenableBuilder<bool>(
+                valueListenable: ProManager.instance.isPro,
+                builder: (_, isPro, __) {
+                  final effectivePro = loggedIn && isPro;
+                  if (effectivePro) return const SizedBox.shrink();
+                  return item(
+                    Icons.workspace_premium,
+                    'Nâng cấp lên Pro',
+                    onTap: onUpgradePro,
+                  );
+                },
               );
             },
           ),

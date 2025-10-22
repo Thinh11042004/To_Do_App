@@ -136,11 +136,17 @@ class _MeTabState extends State<MeTab> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  "Bạn đang ở chế độ ${ProManager.instance.isPro.value ? 'Pro' : 'thường'}. Hãy tiếp tục tạo những thói quen tốt!",
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: scheme.onPrimary.withOpacity(.88),
-                  ),
+                StreamBuilder<User?>(
+                  stream: AuthService.instance.userChanges,
+                  initialData: AuthService.instance.currentUser,
+                  builder: (_, snap) {
+                    final user = snap.data;
+                    final effectivePro = user != null && ProManager.instance.isPro.value;
+                    return Text(
+                      "Bạn đang ở chế độ ${effectivePro ? 'Pro' : 'thường'}. Hãy tiếp tục tạo những thói quen tốt!",
+                      style: textTheme.bodyMedium?.copyWith(color: scheme.onPrimary.withOpacity(.88)),
+                    );
+                  },
                 ),
               ],
             ),
@@ -149,6 +155,7 @@ class _MeTabState extends State<MeTab> {
           // ===== USER TILE =====
           StreamBuilder<User?>(
             stream: AuthService.instance.userChanges,
+            initialData: AuthService.instance.currentUser,
             builder: (context, snap) {
               final user = snap.data;
               final avatar = (user?.photoURL != null)
@@ -170,17 +177,9 @@ class _MeTabState extends State<MeTab> {
                   user?.displayName ?? 'Bạn đã giữ theo kế hoạch cũ…',
                 ),
                 subtitle: Text(user?.email ?? 'Bấm để đăng nhập'),
-                // onTap: () {
-                //   if (user == null) {
-                //     // Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-                //     // nếu có màn login, mở ra ở đây
-                //   }
-                // },
-                onTap: () async {
+                onTap: () {
                   if (user == null) {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    ); // quay lại sẽ tự cập nhật nhờ StreamBuilder<User?>
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                   }
                 },
                 trailing: user != null
@@ -200,64 +199,72 @@ class _MeTabState extends State<MeTab> {
           // ===== PRO BANNER =====
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ValueListenableBuilder<bool>(
-              valueListenable: ProManager.instance.isPro,
-              builder: (_, isPro, __) {
-                if (isPro) return const SizedBox.shrink();
-                return InkWell(
-                  onTap: widget.onUpgrade,
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          scheme.secondary,
-                          scheme.secondaryContainer.withOpacity(.9),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+            child: StreamBuilder<User?>(
+              stream: AuthService.instance.userChanges,
+              initialData: AuthService.instance.currentUser,
+              builder: (_, snap) {
+                final user = snap.data;
+                return ValueListenableBuilder<bool>(
+                  valueListenable: ProManager.instance.isPro,
+                  builder: (_, isPro, __) {
+                    final effectivePro = user != null && isPro;
+                    if (effectivePro) return const SizedBox.shrink();
+                    return InkWell(
+                      onTap: widget.onUpgrade,
                       borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: scheme.secondary.withOpacity(.22),
-                          blurRadius: 22,
-                          offset: const Offset(0, 14),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Nâng cấp lên Pro',
-                                style: textTheme.titleMedium?.copyWith(
-                                  color: scheme.onSecondary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Mở khoá tất cả các tính năng PRO',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onSecondary.withOpacity(.85),
-                                ),
-                              ),
+                      child: Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              scheme.secondary,
+                              scheme.secondaryContainer.withOpacity(.9),
                             ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: scheme.secondary.withOpacity(.22),
+                              blurRadius: 22,
+                              offset: const Offset(0, 14),
+                            ),
+                          ],
                         ),
-                        Icon(
-                          Icons.workspace_premium,
-                          color: scheme.onSecondary,
-                          size: 32,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Nâng cấp lên Pro',
+                                    style: textTheme.titleMedium?.copyWith(
+                                      color: scheme.onSecondary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Mở khoá tất cả các tính năng PRO',
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: scheme.onSecondary.withOpacity(.85),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.workspace_premium,
+                              color: scheme.onSecondary,
+                              size: 32,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
