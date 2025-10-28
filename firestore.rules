@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if the user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Tasks are stored under users/{userId}/tasks/{taskId}
+    match /users/{userId}/tasks/{taskId} {
+      // Users can only read their own tasks
+      allow read: if isOwner(userId);
+      
+      // Users can only create tasks under their own userId
+      allow create: if isAuthenticated() 
+                    && request.auth.uid == userId
+                    && request.resource.data.userId == userId;
+      
+      // Users can only update their own tasks
+      allow update: if isOwner(userId);
+      
+      // Users can only delete their own tasks
+      allow delete: if isOwner(userId);
+    }
+    
+    // Allow users to read their own user document (if you store user data)
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+  }
+}

@@ -1,15 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../domain/entities/task_entity.dart';
 import 'task_repository.dart';
 
 class TaskRepositoryFirebase implements TaskRepository {
-  TaskRepositoryFirebase(FirebaseFirestore firestore)
-      : _firestore = firestore,
-        _collection = firestore.collection('tasks');
+  TaskRepositoryFirebase(this._firestore);
 
   final FirebaseFirestore _firestore;
-  final CollectionReference<Map<String, dynamic>> _collection;
+  String? _userId;
+
+  CollectionReference<Map<String, dynamic>> _collection([String? overrideUserId]) {
+    final userId = overrideUserId ?? _userId;
+    if (userId == null) {
+      throw StateError('User ID is required to access tasks');
+    }
+    return _firestore.collection('users').doc(userId).collection('tasks');
+  }
+
+  // Set the current user ID
+  void setUserId(String? userId) {
+    _userId = userId;
+  }
 
   static const _defaultLimit = 500;
 
@@ -69,10 +81,17 @@ class TaskRepositoryFirebase implements TaskRepository {
 
   @override
   Future<int> add(TaskEntity task) async {
+    // Ensure we have a user before adding
+    if (_userId == null) {
+      final user = await FirebaseAuth.instance.authStateChanges().firstWhere((u) => u != null);
+      _userId = user!.uid;
+    }
+    
     final id = task.id ?? _generateId();
-    final doc = _collection.doc(id.toString());
+    final doc = _collection().doc(id.toString());
     await doc.set({
       'id': id,
+      'userId': _userId,
       ..._toMap(task.copyWith(id: id)),
     });
     return id;
@@ -80,21 +99,38 @@ class TaskRepositoryFirebase implements TaskRepository {
 
   @override
   Future<void> delete(int id) async {
-    await _collection.doc(id.toString()).delete();
+    // Ensure we have a user before deleting
+    if (_userId == null) {
+      final user = await FirebaseAuth.instance.authStateChanges().firstWhere((u) => u != null);
+      _userId = user!.uid;
+    }
+    
+    await _collection().doc(id.toString()).delete();
   }
 
   @override
   Future<List<TaskEntity>> getAllOnce() async {
-    final snapshot = await _collection.orderBy('dueAt', descending: false).limit(_defaultLimit).get();
+    if (_userId == null) {
+      final user = await FirebaseAuth.instance.authStateChanges().firstWhere((u) => u != null);
+      _userId = user!.uid;
+    }
+    final snapshot = await _collection().orderBy('dueAt', descending: false).limit(_defaultLimit).get();
     return snapshot.docs.map(_fromDoc).toList();
   }
 
   @override
   Future<void> update(TaskEntity task) async {
+    // Ensure we have a user before updating
+    if (_userId == null) {
+      final user = await FirebaseAuth.instance.authStateChanges().firstWhere((u) => u != null);
+      _userId = user!.uid;
+    }
+    
     final id = task.id ?? _generateId();
-    await _collection.doc(id.toString()).set(
+    await _collection().doc(id.toString()).set(
           {
             'id': id,
+            'userId': _userId,
             ..._toMap(task.copyWith(id: id)),
           },
           SetOptions(merge: true),
@@ -103,7 +139,22 @@ class TaskRepositoryFirebase implements TaskRepository {
 
   @override
   Stream<List<TaskEntity>> watchAll({int limit = _defaultLimit}) {
-    return _collection
+    if (_userId == null) {
+      // Wait for first available user (anonymous or signed-in), then stream tasks
+      return FirebaseAuth.instance
+          .authStateChanges()
+          .where((u) => u != null)
+          .take(1)
+          .asyncExpand((user) {
+            _userId = user!.uid;
+            return _collection()
+                .orderBy('dueAt', descending: false)
+                .limit(limit)
+                .snapshots()
+                .map((snapshot) => snapshot.docs.map(_fromDoc).toList());
+          });
+    }
+    return _collection()
         .orderBy('dueAt', descending: false)
         .limit(limit)
         .snapshots()

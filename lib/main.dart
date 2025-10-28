@@ -10,6 +10,7 @@ import 'services/notification_service.dart';
 import 'services/pro_manager.dart';
 import 'services/settings_service.dart';
 import 'services/theme_manager.dart';
+import 'services/db_service.dart';
 import 'screens/task/task_list_screen.dart';
 import 'screens/task/task_templates_screen.dart';
 
@@ -35,6 +36,7 @@ Future<void> main() async {
   }
 
   // App services
+  await DbService.init(); // Initialize database with user tracking (anonymous if needed)
   await ProManager.instance.init();
   await NotificationService.instance.init();
   await SettingsService.instance.init();
