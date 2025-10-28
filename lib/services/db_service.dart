@@ -40,8 +40,13 @@ class DbService {
 
     // Listen to auth state changes
     auth.authStateChanges().listen((user) {
-      debugPrint('🔄 Auth state changed: ${user?.uid}');
+      debugPrint('🔄 Auth state changed: ${user?.uid} (anonymous: ${user?.isAnonymous ?? 'null'})');
       _taskRepo.setUserId(user?.uid);
+      
+      // If user signed in with real account, force update
+      if (user != null && !user.isAnonymous) {
+        debugPrint('✅ Real user signed in, updating repository');
+      }
     });
   }
 }

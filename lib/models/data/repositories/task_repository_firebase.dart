@@ -83,8 +83,16 @@ class TaskRepositoryFirebase implements TaskRepository {
   Future<int> add(TaskEntity task) async {
     // Ensure we have a user before adding
     if (_userId == null) {
-      final user = await FirebaseAuth.instance.authStateChanges().firstWhere((u) => u != null);
-      _userId = user!.uid;
+      await Future.delayed(const Duration(milliseconds: 100)); // Wait for auth state listener
+      final auth = FirebaseAuth.instance;
+      final user = auth.currentUser;
+      if (user == null) {
+        final userStream = auth.authStateChanges().firstWhere((u) => u != null);
+        final user = await userStream;
+        _userId = user!.uid;
+      } else {
+        _userId = user.uid;
+      }
     }
     
     final id = task.id ?? _generateId();

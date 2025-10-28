@@ -28,10 +28,17 @@ class ProManager {
 
   String _keyFor(String uid) => '$_kPrefix$uid';
 
+  bool _isAnonymousUser(String? uid) {
+    if (uid == null) return true;
+    final user = AuthService.instance.currentUser;
+    // Check if user is anonymous
+    return user?.isAnonymous ?? true;
+  }
+
   Future<void> _loadForUser(String? uid) async {
     final prefs = await SharedPreferences.getInstance();
-    if (uid == null) {
-      // Khách: luôn là false
+    if (uid == null || _isAnonymousUser(uid)) {
+      // Khách (guest/anonymous): luôn là false
       isPro.value = false;
       return;
     }
@@ -40,8 +47,8 @@ class ProManager {
 
   Future<void> upgrade() async {
     final user = AuthService.instance.currentUser;
-    if (user == null) {
-      throw StateError('Bạn cần đăng nhập trước khi nâng cấp.');
+    if (user == null || user.isAnonymous) {
+      throw StateError('Bạn phải đăng nhập tài khoản thật để nâng cấp Pro. Tài khoản guest không thể nâng cấp.');
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyFor(user.uid), true);

@@ -11,12 +11,15 @@ class UpgradeFlow {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
-    if (AuthService.instance.currentUser == null) {
+    final currentUser = AuthService.instance.currentUser;
+    final isAnonymous = currentUser?.isAnonymous ?? true;
+    
+    if (currentUser == null || isAnonymous) {
       final shouldLogin = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Cần đăng nhập'),
-          content: const Text('Bạn phải đăng nhập để nâng cấp tài khoản Pro.'),
+          content: const Text('Bạn phải đăng nhập tài khoản thật để nâng cấp tài khoản Pro. Tài khoản guest không thể nâng cấp.'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Để sau')),
             FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Đăng nhập')),
@@ -30,9 +33,10 @@ class UpgradeFlow {
 
       await navigator.push(MaterialPageRoute(builder: (_) => const LoginScreen()));
 
-      if (AuthService.instance.currentUser == null) {
+      final newUser = AuthService.instance.currentUser;
+      if (newUser == null || newUser.isAnonymous) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Đăng nhập thất bại. Vui lòng thử lại.')),
+          const SnackBar(content: Text('Đăng nhập thất bại hoặc đây là tài khoản guest. Vui lòng đăng nhập bằng tài khoản thật.')),
         );
         return false;
       }
