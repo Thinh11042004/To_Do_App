@@ -1,0 +1,27 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "us-central1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "authtodoapp-b21b9",
+          "appId": "1:845469238451:android:10e6ac91bf35ea93e8dcc6",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "authtodoapp-b21b9",
+          "configurations": {
+            "android": "1:845469238451:android:10e6ac91bf35ea93e8dcc6"
+          }
+        }
+      }
+    }
+  }
+}
